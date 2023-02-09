@@ -1,14 +1,14 @@
 import cx from 'classnames';
-import { Cue } from '../../models/cue';
+import { Cue } from '../../models/eos';
 
 interface CueProps {
     cue: Cue;
     current?: boolean;
 }
 
-function Cue({ cue, current }: CueProps) {
+function CueListItem({ cue, current }: CueProps) {
     const bgStyle = cx('mb-2 rounded text-eos-grey-light', {
-        'bg-eos-grey-dark': !!cue.note,
+        'bg-eos-grey-dark': !!cue.notes,
     });
 
     const cueLabelStyle = cx(
@@ -26,7 +26,7 @@ function Cue({ cue, current }: CueProps) {
     return (
         <div className={bgStyle}>
             <div className='h-6 flex align-items-center'>
-                <div className={cueNumberStyle}>{cue.number}</div>
+                <div className={cueNumberStyle}>{cue.cueNumber}</div>
                 <div className={cueLabelStyle}>{cue.label}</div>
                 <div className='flex gap-2 grow-0 shrink-0'>
                     {/* edit note */}
@@ -73,9 +73,9 @@ function Cue({ cue, current }: CueProps) {
                 </div>
             </div>
 
-            {cue.note && <div className='py-1 px-2'>{cue.note}</div>}
+            {cue.notes && <div className='py-1 px-2'>{cue.notes}</div>}
         </div>
     );
 }
 
-export default Cue;
+export default CueListItem;
