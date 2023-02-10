@@ -81,6 +81,14 @@ ipcMain.on('console:connect', (_event, ...[address]) => {
         mainWindow?.webContents.send('console:initial-sync-complete');
     });
 
+    eos.on('active-cue', (cueNumber: string) => {
+        mainWindow?.webContents.send('console:active-cue', cueNumber);
+    });
+
+    eos.on('pending-cue', (cueNumber: string) => {
+        mainWindow?.webContents.send('console:pending-cue', cueNumber);
+    });
+
     eos.connect();
 });
 

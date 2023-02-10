@@ -16,6 +16,10 @@ export type ContextBridgeApi = {
 
     updateCueNotes: (cueNumber: string, notes: string) => void;
 
+    onActiveCue: (callback: (cueNumber: string) => void) => void;
+
+    onPendingCue: (callback: (cueNumber: string) => void) => void;
+
     onConsoleConnectionStateChanged: (
         callback: (state: ConnectionState) => void,
     ) => void;
@@ -38,6 +42,16 @@ const exposedApi: ContextBridgeApi = {
 
     updateCueNotes: (cueNumber, notes) =>
         ipcRenderer.send('console:update-cue-notes', cueNumber, notes),
+
+    onActiveCue: (callback) =>
+        ipcRenderer.on('console:active-cue', (_event, ...[cueNumber]) =>
+            callback(cueNumber),
+        ),
+
+    onPendingCue: (callback) =>
+        ipcRenderer.on('console:pending-cue', (_event, ...[cueNumber]) =>
+            callback(cueNumber),
+        ),
 
     onConsoleConnectionStateChanged: (callback) =>
         ipcRenderer.on('console:connection-state', (_event, ...[state]) =>

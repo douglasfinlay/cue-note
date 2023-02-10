@@ -122,9 +122,9 @@ export class EosConsole extends EventEmitter {
         // console.debug('OSC message:', msg);
 
         if (msg.address === '/eos/out/get/version') {
-            if (msg.args.length !== 1) {
+            if (msg.args.length < 1) {
                 console.warn(
-                    `Unexpected argument count for message "${msg.address}" (expect 1, got ${msg.args.length})`,
+                    `Unexpected argument count for message "${msg.address}" (expect at least 1, got ${msg.args.length})`,
                 );
                 return;
             }
@@ -132,18 +132,18 @@ export class EosConsole extends EventEmitter {
             this.eosVersion = msg.args[0];
             console.log(`EOS version: ${this.eosVersion}`);
         } else if (msg.address === '/eos/out/show/name') {
-            if (msg.args.length !== 1) {
+            if (msg.args.length < 1) {
                 console.warn(
-                    `Unexpected argument count for message "${msg.address}" (expect 1, got ${msg.args.length})`,
+                    `Unexpected argument count for message "${msg.address}" (expect at least 1, got ${msg.args.length})`,
                 );
                 return;
             }
 
             this.showName = msg.args[0];
         } else if (msg.address === '/eos/out/get/cue/1/count') {
-            if (msg.args.length !== 1) {
+            if (msg.args.length < 1) {
                 console.warn(
-                    `Unexpected argument count for message "${msg.address}" (expect 1, got ${msg.args.length})`,
+                    `Unexpected argument count for message "${msg.address}" (expect at least 1, got ${msg.args.length})`,
                 );
                 return;
             }
@@ -165,8 +165,10 @@ export class EosConsole extends EventEmitter {
             }
         } else if (ACTIVE_CUE_OSC_ADDRESS.test(msg.address)) {
             this.activeCueNumber = msg.address.split('/')[6];
+            this.emit('active-cue', this.activeCueNumber);
         } else if (PENDING_CUE_OSC_ADDRESS.test(msg.address)) {
             this.pendingCueNumber = msg.address.split('/')[6];
+            this.emit('pending-cue', this.pendingCueNumber);
         }
 
         if (!this.initialSyncComplete) {
@@ -221,9 +223,9 @@ export class EosConsole extends EventEmitter {
 
         const args = msg.args;
 
-        if (args.length !== 31) {
+        if (args.length < 31) {
             console.error(
-                `Unexpected number of arguments for cue message (got ${msg.args.length}; expect 30)`,
+                `Unexpected number of arguments for cue message (expect at least 31, got ${msg.args.length})`,
             );
             return;
         }
@@ -231,7 +233,16 @@ export class EosConsole extends EventEmitter {
         const uid = args[1];
         const label = args[2];
         const notes = args[27];
+        const isPart = args[30] >= 0;
 
-        return { uid, cueListNumber, cueNumber, cuePartNumber, label, notes };
+        return {
+            uid,
+            cueListNumber,
+            cueNumber,
+            cuePartNumber,
+            isPart,
+            label,
+            notes,
+        };
     }
 }

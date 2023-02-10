@@ -26,7 +26,7 @@ function CueListItem({ cue, current }: CueProps) {
     return (
         <div className={bgStyle}>
             <div className='h-6 flex align-items-center'>
-                <div className={cueNumberStyle}>{cue.cueNumber}</div>
+                <div className={cueNumberStyle}>{cue.isPart ? `P${cue.cuePartNumber}` : cue.cueNumber}</div>
                 <div className={cueLabelStyle}>{cue.label}</div>
                 <div className='flex gap-2 grow-0 shrink-0'>
                     {/* edit note */}

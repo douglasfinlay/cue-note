@@ -10,29 +10,50 @@ function App() {
     const [connectionState, setConnectionState] =
         useState<ConnectionState>('disconnected');
     const [cues, setCues] = useState<Cue[]>([]);
-    const [currentCue, setCurrentCue] = useState<Cue | null>(null);
+    const [activeCue, setActiveCue] = useState<Cue | null>(null);
+    const [activeCueNumber, setActiveCueNumber] = useState<string | null>(null);
     const [pendingCue, setPendingCue] = useState<Cue | null>(null);
+    const [pendingCueNumber, setPendingCueNumber] = useState<string | null>(
+        null,
+    );
 
     const getConsoleData = async () => {
         const cues = await window.api.getCues();
         setCues(cues);
-
-        const currentCue = await window.api.getCurrentCue();
-        setCurrentCue(currentCue);
-
-        const pendingCue = await window.api.getPendingCue();
-        setPendingCue(pendingCue);
     };
 
     const clearState = () => {
         setCues([]);
-        setCurrentCue(null);
+        setActiveCue(null);
+        setActiveCueNumber(null);
         setPendingCue(null);
+        setPendingCueNumber(null);
     };
+
+    useEffect(() => {
+        if (activeCueNumber) {
+            const activeCue = cues.find(
+                (cue) => cue.cueNumber === activeCueNumber,
+            );
+            setActiveCue(activeCue ?? null);
+        }
+    }, [cues, activeCueNumber]);
+
+    useEffect(() => {
+        if (pendingCueNumber) {
+            const pendingCue = cues.find(
+                (cue) => cue.cueNumber === pendingCueNumber,
+            );
+            setPendingCue(pendingCue ?? null);
+        }
+    }, [cues, pendingCueNumber]);
 
     useEffect(() => {
         window.api.onConsoleConnectionStateChanged(setConnectionState);
         window.api.onConsoleInitialSyncComplete(getConsoleData);
+
+        window.api.onActiveCue(setActiveCueNumber);
+        window.api.onPendingCue(setPendingCueNumber);
     }, []);
 
     useEffect(() => {
@@ -46,20 +67,23 @@ function App() {
             <div className='basis-2/3 flex gap-3 flex-col min-w-0'>
                 <div className='grow-0 shrink-0'>
                     <PlaybackStatusDisplay
-                        current={currentCue}
+                        active={activeCue}
                         next={pendingCue}
                     />
                 </div>
                 <div className='grow'>
                     <QuickNotes />
                 </div>
-                <div className='basis-1/3 shrink-0'>
+                <div className='basis-28 grow-0 shrink-0'>
                     <NoteInput />
                 </div>
             </div>
             <div className='basis-1/3 shrink-0 flex gap-3 flex-col'>
-                <div className='grow overflow-y-scroll'>
-                    <CueList cues={cues} />
+                <div className='grow overflow-y-hidden shadow-inner relative'>
+                    <CueList
+                        cues={cues}
+                        activeCueNumber={activeCueNumber ?? undefined}
+                    />
                 </div>
                 <div className='grow-0 shrink-0'>
                     <ConsoleConnection

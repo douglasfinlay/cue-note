@@ -10,6 +10,7 @@ export interface Cue extends RecordTarget {
     cueListNumber: number;
     cueNumber: string;
     cuePartNumber: number;
-    label?: string;
-    notes?: string;
+    isPart: boolean;
+    label: string;
+    notes: string;
 }
