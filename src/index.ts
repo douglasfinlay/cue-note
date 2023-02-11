@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { EosConsole } from './main/eos-console';
+import { Cue } from './models/eos';
 
 let mainWindow: BrowserWindow | null;
 let eos: EosConsole | null;
@@ -87,6 +88,10 @@ ipcMain.on('console:connect', (_event, ...[address]) => {
 
     eos.on('pending-cue', (cueNumber: string) => {
         mainWindow?.webContents.send('console:pending-cue', cueNumber);
+    });
+
+    eos.on('cue:deleted', (cue: Cue) => {
+        mainWindow?.webContents.send('console:cue:deleted', cue.cueNumber);
     });
 
     eos.connect();

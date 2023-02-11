@@ -30,6 +30,19 @@ function App() {
         setCues(cues);
     };
 
+    const onCueDeleted = (cueNumber: string) => {
+        setCues((cues) => {
+            const cueIndex = cues.findIndex(
+                (cue) => cue.cueNumber === cueNumber,
+            );
+            if (cueIndex === -1) {
+                return cues;
+            }
+
+            return cues.splice(cueIndex, 1);
+        });
+    };
+
     const clearState = () => {
         setCues([]);
         setActiveCue(null);
@@ -62,6 +75,8 @@ function App() {
 
         window.api.onActiveCue(setActiveCueNumber);
         window.api.onPendingCue(setPendingCueNumber);
+
+        window.api.onCueDeleted(onCueDeleted);
     }, []);
 
     useEffect(() => {

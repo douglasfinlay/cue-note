@@ -2,14 +2,19 @@ import { EventEmitter } from 'events';
 import { Message, TCPSocketPort } from 'osc';
 import { Cue } from '../models/eos';
 
-const CUE_INFO_OSC_ADDRESS =
-    /^\/eos\/out\/get\/cue\/1\/(?<cueNumber>\d+|\d+.\d+)\/(?<cuePartNumber>\d+)\/list\/(?<listIndex>\d+)\/(?<listCount>\d+)$/;
+type RecordTargetUid = string;
+
+const GET_CUE_OSC_ADDRESS =
+    /^\/eos\/out\/get\/cue\/1\/(?<cueNumber>\d+|\d+.\d+)/;
 
 const ACTIVE_CUE_OSC_ADDRESS =
     /^\/eos\/out\/active\/cue\/1\/(?<cueNumber>\d+|\d+.\d+$)/;
 
 const PENDING_CUE_OSC_ADDRESS =
     /^\/eos\/out\/pending\/cue\/1\/(?<cueNumber>\d+|\d+.\d+$)/;
+
+const CUE_CHANGED_OSC_ADDRESS =
+    /^\/eos\/out\/notify\/cue\/1\/list\/(?<listIndex>\d+)\/(?<listCount>\d+)$/;
 
 export class EosConsole extends EventEmitter {
     private oscConnection: TCPSocketPort;
@@ -20,7 +25,8 @@ export class EosConsole extends EventEmitter {
     private showName: string | null = null;
 
     private cuesLeftToSync = Infinity;
-    private cues = new Map<string, Cue>();
+    private cuesByRecordTargetUid = new Map<RecordTargetUid, Cue>();
+    private recordTargetUidByCueNumber = new Map<string, RecordTargetUid>();
 
     private activeCueNumber: string | null = null;
     private pendingCueNumber: string | null = null;
@@ -91,7 +97,7 @@ export class EosConsole extends EventEmitter {
     }
 
     getCues(): Cue[] {
-        return Array.from(this.cues.values());
+        return Array.from(this.cuesByRecordTargetUid.values());
     }
 
     get activeCue(): Cue | undefined {
@@ -99,7 +105,7 @@ export class EosConsole extends EventEmitter {
             return;
         }
 
-        for (const cue of this.cues.values()) {
+        for (const cue of this.cuesByRecordTargetUid.values()) {
             if (cue.cueNumber === this.activeCueNumber) {
                 return cue;
             }
@@ -111,7 +117,7 @@ export class EosConsole extends EventEmitter {
             return;
         }
 
-        for (const cue of this.cues.values()) {
+        for (const cue of this.cuesByRecordTargetUid.values()) {
             if (cue.cueNumber === this.pendingCueNumber) {
                 return cue;
             }
@@ -132,7 +138,7 @@ export class EosConsole extends EventEmitter {
     }
 
     private handleOscMessage(msg: Message) {
-        // console.debug('OSC message:', msg);
+        console.debug('OSC message:', msg);
 
         if (msg.address === '/eos/out/get/version') {
             if (msg.args.length < 1) {
@@ -169,19 +175,25 @@ export class EosConsole extends EventEmitter {
                     args: [],
                 });
             }
-        } else if (CUE_INFO_OSC_ADDRESS.test(msg.address)) {
-            const cue = this.parseCueMessage(msg);
-
-            if (cue) {
-                this.cues.set(cue.uid, cue);
-                this.cuesLeftToSync--;
-            }
+        } else if (GET_CUE_OSC_ADDRESS.test(msg.address)) {
+            this.handleCueMessage(msg);
         } else if (ACTIVE_CUE_OSC_ADDRESS.test(msg.address)) {
             this.activeCueNumber = msg.address.split('/')[6];
             this.emit('active-cue', this.activeCueNumber);
         } else if (PENDING_CUE_OSC_ADDRESS.test(msg.address)) {
             this.pendingCueNumber = msg.address.split('/')[6];
             this.emit('pending-cue', this.pendingCueNumber);
+        } else if (CUE_CHANGED_OSC_ADDRESS.test(msg.address)) {
+            // TODO: collect changed cue numbers from arg index 1 onwards. Each arg is either a single target number or
+            // a hyphenated range.
+            const cueNumber = msg.args[1];
+
+            const getCueMsg: Message = {
+                address: `/eos/get/cue/1/${cueNumber}`,
+                args: [],
+            };
+
+            this.oscConnection.send(getCueMsg);
         }
 
         if (!this.initialSyncComplete) {
@@ -193,7 +205,7 @@ export class EosConsole extends EventEmitter {
         console.error('OSC connection error:', err);
     }
 
-    private parseCueMessage(msg: Message): Cue | undefined {
+    private handleCueMessage(msg: Message) {
         // Address: /eos/out/get/cue/<cue list number>/<cue number>/<cue part number>/list/<list index>/<list count>
         //
         // Arguments:
@@ -232,9 +244,38 @@ export class EosConsole extends EventEmitter {
         const addressParts = msg.address.split('/');
         const cueListNumber = Number(addressParts[5]);
         const cueNumber = addressParts[6];
-        const cuePartNumber = Number(parseInt(addressParts[7]));
+        const cuePartNumber = Number(addressParts[7]);
 
         const args = msg.args;
+        const uid = args[1];
+
+        if (!uid) {
+            // Cue no longer exists on console; find our copy and delete it
+            const deletedCueUid =
+                this.recordTargetUidByCueNumber.get(cueNumber);
+
+            if (deletedCueUid) {
+                this.recordTargetUidByCueNumber.delete(cueNumber);
+                const deletedCue =
+                    this.cuesByRecordTargetUid.get(deletedCueUid);
+                this.cuesByRecordTargetUid.delete(deletedCueUid);
+
+                console.log('CUE DELETED');
+                console.log(deletedCue);
+                this.emit('cue:deleted', deletedCue);
+
+                return;
+            }
+        }
+
+        // TODO: handle list convention for large packets
+        // const listIndex = Number(addressParts[9]);
+        // const listCount = Number(addressParts[10]);
+
+        // We don't care about cue actions, fx, links
+        if (addressParts[8] !== 'list') {
+            return;
+        }
 
         if (args.length < 31) {
             console.error(
@@ -243,12 +284,17 @@ export class EosConsole extends EventEmitter {
             return;
         }
 
-        const uid = args[1];
         const label = args[2];
         const notes = args[27];
         const isPart = args[30] >= 0;
 
-        return {
+        // TODO: handle cue parts
+        if (isPart) {
+            this.cuesLeftToSync--;
+            return;
+        }
+
+        const cue: Cue = {
             uid,
             cueListNumber,
             cueNumber,
@@ -257,5 +303,13 @@ export class EosConsole extends EventEmitter {
             label,
             notes,
         };
+
+        this.cuesByRecordTargetUid.set(uid, cue);
+        this.recordTargetUidByCueNumber.set(cueNumber, uid);
+
+        if (!this.initialSyncComplete) {
+            this.cuesLeftToSync--;
+            this.checkInitialSyncComplete();
+        }
     }
 }
