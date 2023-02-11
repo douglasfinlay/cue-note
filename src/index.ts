@@ -94,6 +94,10 @@ ipcMain.on('console:connect', (_event, ...[address]) => {
         mainWindow?.webContents.send('console:cue:deleted', cue.cueNumber);
     });
 
+    eos.on('cue:updated', (cue: Cue) => {
+        mainWindow?.webContents.send('console:cue:updated', cue);
+    });
+
     eos.connect();
 });
 

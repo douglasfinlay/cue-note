@@ -24,6 +24,8 @@ export type ContextBridgeApi = {
 
     onCueDeleted: (callback: (cueNumber: string) => void) => void;
 
+    onCueUpdated: (callback: (cue: Cue) => void) => void;
+
     onPendingCue: (callback: (cueNumber: string) => void) => void;
 
     onConsoleConnectionStateChanged: (
@@ -62,6 +64,11 @@ const exposedApi: ContextBridgeApi = {
     onCueDeleted: (callback) =>
         ipcRenderer.on('console:cue:deleted', (_event, ...[cueNumber]) =>
             callback(cueNumber),
+        ),
+
+    onCueUpdated: (callback) =>
+        ipcRenderer.on('console:cue:updated', (_event, ...[cue]) =>
+            callback(cue),
         ),
 
     onPendingCue: (callback) =>

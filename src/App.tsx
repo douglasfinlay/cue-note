@@ -35,11 +35,30 @@ function App() {
             const cueIndex = cues.findIndex(
                 (cue) => cue.cueNumber === cueNumber,
             );
+
             if (cueIndex === -1) {
                 return cues;
             }
 
-            return cues.splice(cueIndex, 1);
+            return [...cues.slice(0, cueIndex), ...cues.slice(cueIndex + 1)];
+        });
+    };
+
+    const onCueUpdated = (updatedCue: Cue) => {
+        setCues((cues) => {
+            const existingCueIndex = cues.findIndex(
+                (cue) => cue.cueNumber === updatedCue.cueNumber,
+            );
+
+            if (existingCueIndex === -1) {
+                return cues;
+            }
+
+            return [
+                ...cues.slice(0, existingCueIndex),
+                updatedCue,
+                ...cues.slice(existingCueIndex + 1),
+            ];
         });
     };
 
@@ -77,6 +96,7 @@ function App() {
         window.api.onPendingCue(setPendingCueNumber);
 
         window.api.onCueDeleted(onCueDeleted);
+        window.api.onCueUpdated(onCueUpdated);
     }, []);
 
     useEffect(() => {

@@ -262,11 +262,14 @@ export class EosConsole extends EventEmitter {
 
                 console.log('CUE DELETED');
                 console.log(deletedCue);
-                this.emit('cue:deleted', deletedCue);
 
-                return;
+                this.emit('cue:deleted', deletedCue);
             }
+
+            return;
         }
+
+        // At this point the cue was either added or updated
 
         // TODO: handle list convention for large packets
         // const listIndex = Number(addressParts[9]);
@@ -304,8 +307,17 @@ export class EosConsole extends EventEmitter {
             notes,
         };
 
+        const updating = this.cuesByRecordTargetUid.has(uid);
+
         this.cuesByRecordTargetUid.set(uid, cue);
         this.recordTargetUidByCueNumber.set(cueNumber, uid);
+
+        if (updating) {
+            console.log('CUE UPDATED');
+            console.log(cue);
+
+            this.emit('cue:updated', cue);
+        }
 
         if (!this.initialSyncComplete) {
             this.cuesLeftToSync--;
