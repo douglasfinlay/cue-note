@@ -77,6 +77,19 @@ export class EosConsole extends EventEmitter {
         this.oscConnection.close();
     }
 
+    executeCommand(
+        command: string,
+        substitutions: string[],
+        newCommand = true,
+    ) {
+        const msg: Message = {
+            address: newCommand ? '/eos/newcmd' : '/eos/cmd',
+            args: [command, ...substitutions],
+        };
+
+        this.oscConnection.send(msg);
+    }
+
     getCues(): Cue[] {
         return Array.from(this.cues.values());
     }

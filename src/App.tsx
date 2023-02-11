@@ -17,6 +17,14 @@ function App() {
         null,
     );
 
+    const onNoteChanged = (newNote: string) => {
+        if (!activeCueNumber) {
+            return;
+        }
+
+        window.api.updateCueNotes('1', activeCueNumber, newNote);
+    };
+
     const getConsoleData = async () => {
         const cues = await window.api.getCues();
         setCues(cues);
@@ -75,7 +83,7 @@ function App() {
                     <QuickNotes />
                 </div>
                 <div className='basis-28 grow-0 shrink-0'>
-                    <NoteInput />
+                    <NoteInput onNoteChanged={onNoteChanged} />
                 </div>
             </div>
             <div className='basis-1/3 shrink-0 flex gap-3 flex-col'>

@@ -109,6 +109,10 @@ ipcMain.on('console:go-to-cue', (_event, ...[cueNumber]) =>
     console.log('GO TO CUE', cueNumber),
 );
 
-ipcMain.on('console:update-cue-notes', (_event, [cueNumber, notes]) => {
-    console.log('UPDATE CUE NOTES', cueNumber, notes);
-});
+ipcMain.on(
+    'console:update-cue-notes',
+    (_event, ...[cueListNumber, cueNumber, notes]) => {
+        const command = 'Cue %1 / %2 Notes %3 Enter';
+        eos?.executeCommand(command, [cueListNumber, cueNumber, notes]);
+    },
+);

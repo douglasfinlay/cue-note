@@ -14,7 +14,11 @@ export type ContextBridgeApi = {
 
     goToCue: (cueNumber: string) => void;
 
-    updateCueNotes: (cueNumber: string, notes: string) => void;
+    updateCueNotes: (
+        cueListNumber: string,
+        cueNumber: string,
+        notes: string,
+    ) => void;
 
     onActiveCue: (callback: (cueNumber: string) => void) => void;
 
@@ -40,8 +44,13 @@ const exposedApi: ContextBridgeApi = {
 
     goToCue: (cueNumber) => ipcRenderer.send('console:go-to-cue', cueNumber),
 
-    updateCueNotes: (cueNumber, notes) =>
-        ipcRenderer.send('console:update-cue-notes', cueNumber, notes),
+    updateCueNotes: (cueListNumber, cueNumber, notes) =>
+        ipcRenderer.send(
+            'console:update-cue-notes',
+            cueListNumber,
+            cueNumber,
+            notes,
+        ),
 
     onActiveCue: (callback) =>
         ipcRenderer.on('console:active-cue', (_event, ...[cueNumber]) =>

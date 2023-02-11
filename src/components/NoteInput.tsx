@@ -1,11 +1,35 @@
-function NoteInput() {
-    const text =
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce accumsan ullamcorper diam nec sollicitudin. Vivamus imperdiet orci vitae augue tempus laoreet. Phasellus id justo sed arcu pulvinar feugiat. Aliquam tincidunt dui quam, non ultricies orci placerat vitae. Phasellus sed diam dignissim, faucibus justo congue, tincidunt augue. Vivamus nulla enim, tincidunt nec finibus vitae, consequat at augue. Morbi congue sed orci sed luctus. In hac habitasse platea dictumst. Etiam at dolor et ligula semper sodales.';
+import { KeyboardEvent, useEffect, useState } from 'react';
+
+interface NoteInputProps {
+    note?: string;
+    onNoteChanged: (note: string) => void;
+}
+
+function NoteInput({ note = '', onNoteChanged }: NoteInputProps) {
+    const [text, setText] = useState(note);
+
+    useEffect(() => {
+        setText(note);
+    }, [note]);
+
+    const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+
+            if (text.length) {
+                onNoteChanged(text);
+                setText('');
+            }
+        }
+    };
 
     return (
         <textarea
-            className='h-full w-full px-3 py-2 text-lg align-top rounded bg-black border border-solid border-eos-yellow resize-none'
-            defaultValue={text}
+            className='h-full w-full px-3 py-2 text-2xl align-top rounded bg-black border border-solid border-eos-yellow resize-none'
+            placeholder='Type your note followed by enter...'
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={onKeyDown}
         ></textarea>
     );
 }
