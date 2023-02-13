@@ -12,10 +12,6 @@ function App() {
     const [cues, setCues] = useState<Cue[]>([]);
     const [activeCue, setActiveCue] = useState<Cue | null>(null);
     const [activeCueNumber, setActiveCueNumber] = useState<string | null>(null);
-    const [pendingCue, setPendingCue] = useState<Cue | null>(null);
-    const [pendingCueNumber, setPendingCueNumber] = useState<string | null>(
-        null,
-    );
 
     const onNoteChanged = (newNote: string) => {
         if (!activeCueNumber) {
@@ -66,8 +62,6 @@ function App() {
         setCues([]);
         setActiveCue(null);
         setActiveCueNumber(null);
-        setPendingCue(null);
-        setPendingCueNumber(null);
     };
 
     useEffect(() => {
@@ -80,21 +74,9 @@ function App() {
     }, [cues, activeCueNumber]);
 
     useEffect(() => {
-        if (pendingCueNumber) {
-            const pendingCue = cues.find(
-                (cue) => cue.cueNumber === pendingCueNumber,
-            );
-            setPendingCue(pendingCue ?? null);
-        }
-    }, [cues, pendingCueNumber]);
-
-    useEffect(() => {
+        window.api.onActiveCue(setActiveCueNumber);
         window.api.onConsoleConnectionStateChanged(setConnectionState);
         window.api.onConsoleInitialSyncComplete(getConsoleData);
-
-        window.api.onActiveCue(setActiveCueNumber);
-        window.api.onPendingCue(setPendingCueNumber);
-
         window.api.onCueDeleted(onCueDeleted);
         window.api.onCueUpdated(onCueUpdated);
     }, []);
@@ -106,16 +88,13 @@ function App() {
     }, [connectionState]);
 
     return (
-        <div className='flex gap-3 w-screen min-w-screen h-screen min-h-screen p-2 text-white bg-black'>
+        <div className='flex gap-3 w-screen min-w-screen h-screen min-h-screen p-2 select-none text-white bg-black'>
             <div className='basis-2/3 flex gap-3 flex-col min-w-0'>
-                <div className='grow-0 shrink-0'>
-                    <PlaybackStatusDisplay
-                        active={activeCue}
-                        next={pendingCue}
-                    />
-                </div>
                 <div className='grow'>
                     <QuickNotes />
+                </div>
+                <div className='grow-0 shrink-0'>
+                    <PlaybackStatusDisplay active={activeCue} />
                 </div>
                 <div className='basis-28 grow-0 shrink-0'>
                     <NoteInput onNoteChanged={onNoteChanged} />
