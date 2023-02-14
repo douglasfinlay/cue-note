@@ -312,16 +312,13 @@ export class EosConsole extends EventEmitter {
         this.cuesByRecordTargetUid.set(uid, cue);
         this.recordTargetUidByCueNumber.set(cueNumber, uid);
 
-        if (updating) {
-            console.log('CUE UPDATED');
-            console.log(cue);
-
-            this.emit('cue:updated', cue);
-        }
-
         if (!this.initialSyncComplete) {
             this.cuesLeftToSync--;
             this.checkInitialSyncComplete();
+
+            return;
         }
+
+        this.emit(updating ? 'cue:updated' : 'cue:created', cue);
     }
 }

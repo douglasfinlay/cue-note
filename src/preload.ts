@@ -1,5 +1,7 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 import { ConnectionState, Cue } from './models/eos';
+
+export type RemoveEventListenerFunc = () => void;
 
 export type ContextBridgeApi = {
     connectConsole: (address: string) => void;
@@ -20,19 +22,29 @@ export type ContextBridgeApi = {
         notes: string,
     ) => void;
 
-    onActiveCue: (callback: (cueNumber: string) => void) => void;
+    onActiveCue: (
+        callback: (cueNumber: string) => void,
+    ) => RemoveEventListenerFunc;
 
-    onCueDeleted: (callback: (cueNumber: string) => void) => void;
+    onCueCreated: (callback: (cue: Cue) => void) => RemoveEventListenerFunc;
 
-    onCueUpdated: (callback: (cue: Cue) => void) => void;
+    onCueDeleted: (
+        callback: (cueNumber: string) => void,
+    ) => RemoveEventListenerFunc;
 
-    onPendingCue: (callback: (cueNumber: string) => void) => void;
+    onCueUpdated: (callback: (cue: Cue) => void) => RemoveEventListenerFunc;
+
+    onPendingCue: (
+        callback: (cueNumber: string) => void,
+    ) => RemoveEventListenerFunc;
 
     onConsoleConnectionStateChanged: (
         callback: (state: ConnectionState) => void,
-    ) => void;
+    ) => RemoveEventListenerFunc;
 
-    onConsoleInitialSyncComplete: (callback: () => void) => void;
+    onConsoleInitialSyncComplete: (
+        callback: () => void,
+    ) => RemoveEventListenerFunc;
 };
 
 const exposedApi: ContextBridgeApi = {
@@ -56,33 +68,89 @@ const exposedApi: ContextBridgeApi = {
             notes,
         ),
 
-    onActiveCue: (callback) =>
-        ipcRenderer.on('console:active-cue', (_event, ...[cueNumber]) =>
-            callback(cueNumber),
-        ),
+    onActiveCue: (callback) => {
+        const subscription = (
+            _event: IpcRendererEvent,
+            ...[cueNumber]: [string]
+        ) => callback(cueNumber);
 
-    onCueDeleted: (callback) =>
-        ipcRenderer.on('console:cue:deleted', (_event, ...[cueNumber]) =>
-            callback(cueNumber),
-        ),
+        ipcRenderer.on('console:active-cue', subscription);
 
-    onCueUpdated: (callback) =>
-        ipcRenderer.on('console:cue:updated', (_event, ...[cue]) =>
-            callback(cue),
-        ),
+        return () => {
+            ipcRenderer.off('console:active-cue', subscription);
+        };
+    },
 
-    onPendingCue: (callback) =>
-        ipcRenderer.on('console:pending-cue', (_event, ...[cueNumber]) =>
-            callback(cueNumber),
-        ),
+    onCueCreated: (callback) => {
+        const subscription = (_event: IpcRendererEvent, ...[cue]: [Cue]) =>
+            callback(cue);
 
-    onConsoleConnectionStateChanged: (callback) =>
-        ipcRenderer.on('console:connection-state', (_event, ...[state]) =>
-            callback(state),
-        ),
+        ipcRenderer.on('console:cue:created', subscription);
 
-    onConsoleInitialSyncComplete: (callback) =>
-        ipcRenderer.on('console:initial-sync-complete', () => callback()),
+        return () => {
+            ipcRenderer.off('console:cue:created', subscription);
+        };
+    },
+
+    onCueDeleted: (callback) => {
+        const subscription = (
+            _event: IpcRendererEvent,
+            ...[cueNumber]: [string]
+        ) => callback(cueNumber);
+
+        ipcRenderer.on('console:cue:deleted', subscription);
+
+        return () => {
+            ipcRenderer.off('console:cue:deleted', subscription);
+        };
+    },
+
+    onCueUpdated: (callback) => {
+        const subscription = (_event: IpcRendererEvent, ...[cue]: [Cue]) =>
+            callback(cue);
+
+        ipcRenderer.on('console:cue:updated', subscription);
+
+        return () => {
+            ipcRenderer.off('console:cue:updated', subscription);
+        };
+    },
+
+    onPendingCue: (callback) => {
+        const subscription = (
+            _event: IpcRendererEvent,
+            ...[cueNumber]: [string]
+        ) => callback(cueNumber);
+
+        ipcRenderer.on('console:pending-cue', subscription);
+
+        return () => {
+            ipcRenderer.off('console:pending-cue', subscription);
+        };
+    },
+
+    onConsoleConnectionStateChanged: (callback) => {
+        const subscription = (
+            _event: IpcRendererEvent,
+            ...[state]: [ConnectionState]
+        ) => callback(state);
+
+        ipcRenderer.on('console:connection-state', subscription);
+
+        return () => {
+            ipcRenderer.off('console:connection-state', subscription);
+        };
+    },
+
+    onConsoleInitialSyncComplete: (callback) => {
+        const subscription = () => callback();
+
+        ipcRenderer.on('console:initial-sync-complete', subscription);
+
+        return () => {
+            ipcRenderer.off('console:initial-sync-complete', subscription);
+        };
+    },
 };
 
 contextBridge.exposeInMainWorld('api', exposedApi);

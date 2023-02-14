@@ -90,6 +90,10 @@ ipcMain.on('console:connect', (_event, ...[address]) => {
         mainWindow?.webContents.send('console:pending-cue', cueNumber);
     });
 
+    eos.on('cue:created', (cue: Cue) => {
+        mainWindow?.webContents.send('console:cue:created', cue);
+    });
+
     eos.on('cue:deleted', (cue: Cue) => {
         mainWindow?.webContents.send('console:cue:deleted', cue.cueNumber);
     });

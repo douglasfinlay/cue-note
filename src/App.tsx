@@ -5,6 +5,7 @@ import QuickNotes from './components/QuickNotes';
 import ConsoleConnection from './components/sidebar/ConsoleConnection';
 import CueList from './components/sidebar/CueList';
 import { ConnectionState, Cue } from './models/eos';
+import { RemoveEventListenerFunc } from './preload';
 
 function App() {
     const [connectionState, setConnectionState] =
@@ -49,6 +50,24 @@ function App() {
         setCues(cues);
     };
 
+    const onCueCreated = (newCue: Cue) => {
+        setCues((cues) => {
+            const previousCueIndex = cues.findIndex(
+                (cue) => Number(cue.cueNumber) > Number(newCue.cueNumber),
+            );
+
+            if (previousCueIndex === -1) {
+                return [...cues, newCue];
+            }
+
+            return [
+                ...cues.slice(0, previousCueIndex),
+                newCue,
+                ...cues.slice(previousCueIndex),
+            ];
+        });
+    };
+
     const onCueDeleted = (cueNumber: string) => {
         setCues((cues) => {
             const cueIndex = cues.findIndex(
@@ -63,23 +82,12 @@ function App() {
         });
     };
 
-    const onCueUpdated = (updatedCue: Cue) => {
-        setCues((cues) => {
-            const existingCueIndex = cues.findIndex(
-                (cue) => cue.cueNumber === updatedCue.cueNumber,
-            );
-
-            if (existingCueIndex === -1) {
-                return cues;
-            }
-
-            return [
-                ...cues.slice(0, existingCueIndex),
-                updatedCue,
-                ...cues.slice(existingCueIndex + 1),
-            ];
-        });
-    };
+    const onCueUpdated = (updatedCue: Cue) =>
+        setCues((cues) =>
+            cues.map((cue) =>
+                cue.cueNumber === updatedCue.cueNumber ? updatedCue : cue,
+            ),
+        );
 
     const clearState = () => {
         setCues([]);
@@ -117,15 +125,26 @@ function App() {
     };
 
     useEffect(() => {
-        window.api.onActiveCue(setActiveCueNumber);
-        window.api.onConsoleConnectionStateChanged(setConnectionState);
-        window.api.onConsoleInitialSyncComplete(getConsoleData);
-        window.api.onCueDeleted(onCueDeleted);
-        window.api.onCueUpdated(onCueUpdated);
+        const eventListeners: RemoveEventListenerFunc[] = [];
+
+        eventListeners.push(window.api.onActiveCue(setActiveCueNumber));
+        eventListeners.push(
+            window.api.onConsoleConnectionStateChanged(setConnectionState),
+        );
+        eventListeners.push(
+            window.api.onConsoleInitialSyncComplete(getConsoleData),
+        );
+        eventListeners.push(window.api.onCueCreated(onCueCreated));
+        eventListeners.push(window.api.onCueDeleted(onCueDeleted));
+        eventListeners.push(window.api.onCueUpdated(onCueUpdated));
 
         document.addEventListener('keydown', onKeyDown, false);
 
         () => {
+            for (const removeListener of eventListeners) {
+                removeListener();
+            }
+
             document.removeEventListener('keydown', onKeyDown, false);
         };
     }, []);
