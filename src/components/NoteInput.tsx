@@ -1,12 +1,14 @@
 import { ChangeEvent, KeyboardEvent, useEffect, useState } from 'react';
 
 interface NoteInputProps {
+    disabled?: boolean;
     value?: string;
     onEnterPressed: () => void;
     onTextChanged: (text: string) => void;
 }
 
 function NoteInput({
+    disabled = false,
     value = '',
     onEnterPressed,
     onTextChanged,
@@ -33,7 +35,8 @@ function NoteInput({
 
     return (
         <textarea
-            className='h-full w-full px-3 py-2 text-2xl align-top rounded bg-black border border-solid border-eos-yellow resize-none'
+            className='h-full w-full px-3 py-2 text-2xl align-top rounded bg-black border border-solid border-eos-yellow resize-none disabled:opacity-50'
+            disabled={disabled}
             placeholder='Type your note followed by enter...'
             value={text}
             onChange={onTextChange}

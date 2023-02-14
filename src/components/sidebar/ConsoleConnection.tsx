@@ -1,5 +1,11 @@
-import { useState } from 'react';
+import { ChangeEvent, useState } from 'react';
 import { ConnectionState } from '../../models/eos';
+
+const HOSTNAME =
+    /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$/;
+const IPV4_ADDRESS =
+    /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+const IPV6_ADDRESS = /^(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}$/;
 
 interface ConsoleConnectionProps {
     connectionState: ConnectionState;
@@ -12,7 +18,21 @@ function ConsoleConnection({
     onTriggerConnect,
     onTriggerDisconnect,
 }: ConsoleConnectionProps) {
-    const [address, setAddress] = useState('');
+    const [host, setHost] = useState('');
+    const [isHostValid, setIsHostValid] = useState(false);
+
+    const onHostChanged = (e: ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value.toLowerCase();
+        setHost(value);
+
+        const valid =
+            value.length <= 255 &&
+            (HOSTNAME.test(value) ||
+                IPV4_ADDRESS.test(value) ||
+                IPV6_ADDRESS.test(value));
+
+        setIsHostValid(valid);
+    };
 
     return (
         <div className='flex'>
@@ -20,8 +40,8 @@ function ConsoleConnection({
                 type='text'
                 className='flex-grow px-2 rounded bg-black border border-solid border-eos-yellow'
                 placeholder='EOS Console IP Address'
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                value={host}
+                onChange={onHostChanged}
             ></input>
 
             {connectionState === 'connected' ? (
@@ -33,11 +53,9 @@ function ConsoleConnection({
                 </button>
             ) : (
                 <button
-                    className='px-3 py-1 ml-2 rounded bg-eos-grey-dark border-2 border-solid border-eos-grey-light'
-                    disabled={
-                        !address.length || connectionState === 'connecting'
-                    }
-                    onClick={() => onTriggerConnect(address)}
+                    className='px-3 py-1 ml-2 rounded bg-eos-grey-dark border-2 border-solid border-eos-grey-light disabled:opacity-50'
+                    disabled={!isHostValid || connectionState === 'connecting'}
+                    onClick={() => onTriggerConnect(host)}
                 >
                     {connectionState === 'connecting'
                         ? 'Connecting'

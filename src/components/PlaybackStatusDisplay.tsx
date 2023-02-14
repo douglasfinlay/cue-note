@@ -3,12 +3,14 @@ import { Cue } from '../models/eos';
 
 interface PlaybackStatusDisplayProps {
     active: Cue | null;
+    disabled?: boolean;
     editing?: boolean;
     next?: Cue | null;
 }
 
 function PlaybackStatusDisplay({
     active,
+    disabled = false,
     editing = false,
     next,
 }: PlaybackStatusDisplayProps) {
@@ -24,8 +26,10 @@ function PlaybackStatusDisplay({
         { 'text-purple-400': editing },
     );
 
+    const mainClassNames = classNames({ 'opacity-50': disabled });
+
     return (
-        <>
+        <div className={mainClassNames}>
             <div className='text-2xl h-10 flex align-items-center rounded bg-eos-grey-dark'>
                 <div className={activeCueBackgroundClassNames}>
                     {active?.cueNumber}
@@ -42,7 +46,7 @@ function PlaybackStatusDisplay({
                     </div>
                 </div>
             )}
-        </>
+        </div>
     );
 }
 

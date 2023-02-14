@@ -11,6 +11,7 @@ function App() {
     const [connectionState, setConnectionState] =
         useState<ConnectionState>('disconnected');
     const [cues, setCues] = useState<Cue[]>([]);
+    const [ready, setReady] = useState(false);
     const [activeCue, setActiveCue] = useState<Cue | null>(null);
     const [activeCueNumber, setActiveCueNumber] = useState<string | null>(null);
     const [editingCue, setEditingCue] = useState<Cue | null>(null);
@@ -45,7 +46,7 @@ function App() {
         setEditNoteText('');
     };
 
-    const getConsoleData = async () => {
+    const onInitialSyncComplete = async () => {
         const cues = await window.api.getCues();
         setCues(cues);
     };
@@ -132,7 +133,7 @@ function App() {
             window.api.onConsoleConnectionStateChanged(setConnectionState),
         );
         eventListeners.push(
-            window.api.onConsoleInitialSyncComplete(getConsoleData),
+            window.api.onConsoleInitialSyncComplete(onInitialSyncComplete),
         );
         eventListeners.push(window.api.onCueCreated(onCueCreated));
         eventListeners.push(window.api.onCueDeleted(onCueDeleted));
@@ -155,27 +156,33 @@ function App() {
         }
     }, [connectionState]);
 
+    useEffect(() => {
+        setReady(connectionState === 'connected' && !!activeCueNumber);
+    }, [connectionState, activeCueNumber]);
+
     return (
         <div className='flex gap-3 w-screen min-w-screen h-screen min-h-screen p-2 select-none text-white bg-black'>
             <div className='basis-2/3 flex gap-3 flex-col min-w-0'>
                 <div className='grow'>
-                    <QuickNotes />
+                    <QuickNotes disabled={!ready} />
                 </div>
                 <div className='grow-0 shrink-0'>
                     <PlaybackStatusDisplay
                         active={editingCue || activeCue}
+                        disabled={!ready}
                         editing={!!editingCue}
                     />
                 </div>
                 <div className='basis-28 grow-0 shrink-0'>
                     <NoteInput
+                        disabled={!ready}
                         value={editNoteText}
                         onEnterPressed={saveNote}
                         onTextChanged={onEditNoteTextEdited}
                     />
                 </div>
             </div>
-            <div className='basis-1/3 shrink-0 flex gap-3 flex-col'>
+            <div className='basis-1/3 grow-0 shrink-0 flex gap-3 flex-col'>
                 <div className='grow overflow-y-hidden shadow-inner relative'>
                     <CueList
                         cues={cues}
