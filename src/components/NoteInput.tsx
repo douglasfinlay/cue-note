@@ -1,26 +1,34 @@
-import { KeyboardEvent, useEffect, useState } from 'react';
+import { ChangeEvent, KeyboardEvent, useEffect, useState } from 'react';
 
 interface NoteInputProps {
-    note?: string;
-    onNoteChanged: (note: string) => void;
+    value?: string;
+    onEnterPressed: () => void;
+    onTextChanged: (text: string) => void;
 }
 
-function NoteInput({ note = '', onNoteChanged }: NoteInputProps) {
-    const [text, setText] = useState(note);
+function NoteInput({
+    value = '',
+    onEnterPressed,
+    onTextChanged,
+}: NoteInputProps) {
+    const [text, setText] = useState(value);
 
     useEffect(() => {
-        setText(note);
-    }, [note]);
+        setText(value);
+    }, [value]);
 
     const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-
-            if (text.length) {
-                onNoteChanged(text);
-                setText('');
-            }
+            onEnterPressed();
         }
+    };
+
+    const onTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+        const newValue = e.target.value;
+
+        setText(newValue);
+        onTextChanged(newValue);
     };
 
     return (
@@ -28,7 +36,7 @@ function NoteInput({ note = '', onNoteChanged }: NoteInputProps) {
             className='h-full w-full px-3 py-2 text-2xl align-top rounded bg-black border border-solid border-eos-yellow resize-none'
             placeholder='Type your note followed by enter...'
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={onTextChange}
             onKeyDown={onKeyDown}
         ></textarea>
     );

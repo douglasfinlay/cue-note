@@ -12,13 +12,36 @@ function App() {
     const [cues, setCues] = useState<Cue[]>([]);
     const [activeCue, setActiveCue] = useState<Cue | null>(null);
     const [activeCueNumber, setActiveCueNumber] = useState<string | null>(null);
+    const [editingCue, setEditingCue] = useState<Cue | null>(null);
+    const [editingCueNumber, setEditingCueNumber] = useState<string | null>(
+        null,
+    );
+    const [editNoteText, setEditNoteText] = useState('');
 
-    const onNoteChanged = (newNote: string) => {
-        if (!activeCueNumber) {
+    const onEditNoteTextEdited = (text: string) => {
+        if (!editingCueNumber) {
+            setEditingCueNumber(activeCueNumber);
+        }
+
+        setEditNoteText(text);
+    };
+
+    const saveNote = () => {
+        if (!editingCueNumber) {
             return;
         }
 
-        window.api.updateCueNotes('1', activeCueNumber, newNote);
+        window.api.updateCueNotes(
+            '1',
+            editingCueNumber,
+            editNoteText.trimEnd(),
+        );
+        cancelEditingNote();
+    };
+
+    const cancelEditingNote = () => {
+        setEditingCueNumber(null);
+        setEditNoteText('');
     };
 
     const getConsoleData = async () => {
@@ -62,6 +85,8 @@ function App() {
         setCues([]);
         setActiveCue(null);
         setActiveCueNumber(null);
+        setEditingCue(null);
+        setEditingCueNumber(null);
     };
 
     useEffect(() => {
@@ -74,11 +99,35 @@ function App() {
     }, [cues, activeCueNumber]);
 
     useEffect(() => {
+        if (!editingCueNumber) {
+            setEditingCue(null);
+            return;
+        }
+
+        const editingCue = cues.find(
+            (cue) => cue.cueNumber === editingCueNumber,
+        );
+        setEditingCue(editingCue ?? null);
+    }, [cues, editingCueNumber]);
+
+    const onKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+            cancelEditingNote();
+        }
+    };
+
+    useEffect(() => {
         window.api.onActiveCue(setActiveCueNumber);
         window.api.onConsoleConnectionStateChanged(setConnectionState);
         window.api.onConsoleInitialSyncComplete(getConsoleData);
         window.api.onCueDeleted(onCueDeleted);
         window.api.onCueUpdated(onCueUpdated);
+
+        document.addEventListener('keydown', onKeyDown, false);
+
+        () => {
+            document.removeEventListener('keydown', onKeyDown, false);
+        };
     }, []);
 
     useEffect(() => {
@@ -94,17 +143,26 @@ function App() {
                     <QuickNotes />
                 </div>
                 <div className='grow-0 shrink-0'>
-                    <PlaybackStatusDisplay active={activeCue} />
+                    <PlaybackStatusDisplay
+                        active={editingCue || activeCue}
+                        editing={!!editingCue}
+                    />
                 </div>
                 <div className='basis-28 grow-0 shrink-0'>
-                    <NoteInput onNoteChanged={onNoteChanged} />
+                    <NoteInput
+                        value={editNoteText}
+                        onEnterPressed={saveNote}
+                        onTextChanged={onEditNoteTextEdited}
+                    />
                 </div>
             </div>
             <div className='basis-1/3 shrink-0 flex gap-3 flex-col'>
                 <div className='grow overflow-y-hidden shadow-inner relative'>
                     <CueList
                         cues={cues}
-                        activeCueNumber={activeCueNumber ?? undefined}
+                        activeCueNumber={activeCueNumber}
+                        editingCueNumber={editingCueNumber}
+                        focusCueNumber={editingCueNumber || activeCueNumber}
                     />
                 </div>
                 <div className='grow-0 shrink-0'>

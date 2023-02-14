@@ -3,30 +3,36 @@ import { Cue } from '../../models/eos';
 
 interface CueProps {
     cue: Cue;
-    current?: boolean;
+    active?: boolean;
+    editing?: boolean;
 }
 
-function CueListItem({ cue, current }: CueProps) {
+function CueListItem({ cue, active, editing }: CueProps) {
     const bgStyle = cx('mb-2 rounded text-eos-grey-light', {
         'bg-eos-grey-dark': !!cue.notes,
     });
 
     const cueLabelStyle = cx(
         'self-center pl-3 text-ellipsis overflow-hidden whitespace-nowrap grow',
-        { 'text-eos-yellow': current },
-        { 'text-eos-grey-light': !current },
+        { 'text-eos-yellow': active && !editing },
+        { 'text-eos-grey-light': !active && !editing },
+        { 'text-purple-400': editing },
     );
 
     const cueNumberStyle = cx(
         'flex flex-col justify-center rounded font-bold shrink-0 basis-24 pl-3',
-        { 'bg-eos-yellow': current, 'text-black': current },
-        { 'text-white': !current },
+        { 'bg-eos-yellow': active && !editing },
+        { 'text-black': active },
+        { 'text-white': !active },
+        { 'bg-purple-400': editing },
     );
 
     return (
         <div className={bgStyle}>
             <div className='h-6 flex align-items-center'>
-                <div className={cueNumberStyle}>{cue.isPart ? `P${cue.cuePartNumber}` : cue.cueNumber}</div>
+                <div className={cueNumberStyle}>
+                    {cue.isPart ? `P${cue.cuePartNumber}` : cue.cueNumber}
+                </div>
                 <div className={cueLabelStyle}>{cue.label}</div>
                 <div className='flex gap-2 grow-0 shrink-0'>
                     {/* edit note */}

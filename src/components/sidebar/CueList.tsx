@@ -3,12 +3,20 @@ import { Cue } from '../../models/eos';
 import CueListItem from './CueListItem';
 
 interface CueListProps {
-    activeCueNumber?: string;
+    activeCueNumber?: string | null;
     cues: Cue[];
+    editingCueNumber?: string | null;
+    focusCueNumber?: string | null;
     showParts?: boolean;
 }
 
-function CueList({ activeCueNumber, cues, showParts = false }: CueListProps) {
+function CueList({
+    activeCueNumber,
+    cues,
+    editingCueNumber,
+    focusCueNumber,
+    showParts = false,
+}: CueListProps) {
     if (!showParts) {
         cues = cues.filter((cue) => !cue.isPart);
     }
@@ -44,16 +52,17 @@ function CueList({ activeCueNumber, cues, showParts = false }: CueListProps) {
     };
 
     useEffect(() => {
-        if (activeCueNumber) {
-            scrollToCue(activeCueNumber);
+        if (focusCueNumber) {
+            scrollToCue(focusCueNumber);
         }
-    }, [activeCueNumber, cues]);
+    }, [focusCueNumber, cues]);
 
     const cueComponents = cues.map((cue, i) => (
         <CueListItem
             key={i}
             cue={cue}
-            current={cue.cueNumber === activeCueNumber}
+            active={!!activeCueNumber && cue.cueNumber === activeCueNumber}
+            editing={!!editingCueNumber && cue.cueNumber === editingCueNumber}
         />
     ));
 
