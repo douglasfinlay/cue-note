@@ -39,12 +39,16 @@ function App() {
         setEditNoteText(text);
     };
 
+    const applyNoteToCue = (cueNumber: string, note: string) => {
+        window.api.updateCueNotes('1', cueNumber, note.trimEnd());
+        discardNote();
+    };
+
     const applyNoteToCurrentCue = (note: string) => {
         const targetCueNumber = editingCueNumber || activeCueNumber;
 
         if (targetCueNumber) {
-            window.api.updateCueNotes('1', targetCueNumber, note.trimEnd());
-            discardNote();
+            applyNoteToCue(targetCueNumber, note);
         }
     };
 
@@ -237,6 +241,9 @@ function App() {
                         activeCueNumber={activeCueNumber}
                         editingCueNumber={editingCueNumber}
                         focusCueNumber={editingCueNumber || activeCueNumber}
+                        onTriggerClearCue={(cueNumber) =>
+                            applyNoteToCue(cueNumber, '')
+                        }
                     />
                 </div>
                 <div className='grow-0 shrink-0'>

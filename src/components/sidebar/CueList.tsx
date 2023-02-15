@@ -8,6 +8,9 @@ interface CueListProps {
     editingCueNumber?: string | null;
     focusCueNumber?: string | null;
     showParts?: boolean;
+    onTriggerClearCue?: (cueNumber: string) => void;
+    onTriggerEditCue?: (cueNumber: string) => void;
+    onTriggerGoToCue?: (cueNumber: string) => void;
 }
 
 function CueList({
@@ -16,6 +19,9 @@ function CueList({
     editingCueNumber,
     focusCueNumber,
     showParts = false,
+    onTriggerClearCue,
+    onTriggerEditCue,
+    onTriggerGoToCue,
 }: CueListProps) {
     if (!showParts) {
         cues = cues.filter((cue) => !cue.isPart);
@@ -63,6 +69,15 @@ function CueList({
             cue={cue}
             active={!!activeCueNumber && cue.cueNumber === activeCueNumber}
             editing={!!editingCueNumber && cue.cueNumber === editingCueNumber}
+            onTriggerClear={
+                onTriggerClearCue && (() => onTriggerClearCue(cue.cueNumber))
+            }
+            onTriggerEdit={
+                onTriggerEditCue && (() => onTriggerEditCue(cue.cueNumber))
+            }
+            onTriggerGoTo={
+                onTriggerGoToCue && (() => onTriggerGoToCue(cue.cueNumber))
+            }
         />
     ));
 
