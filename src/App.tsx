@@ -1,17 +1,28 @@
 import { useEffect, useState } from 'react';
 import NoteInput from './components/NoteInput';
 import PlaybackStatusDisplay from './components/PlaybackStatusDisplay';
-import QuickNotes from './components/QuickNotes';
+import QuickNoteButtonGrid from './components/QuickNoteButtonGrid';
 import ConsoleConnection from './components/sidebar/ConsoleConnection';
 import CueList from './components/sidebar/CueList';
 import { ConnectionState, Cue } from './models/eos';
 import { RemoveEventListenerFunc } from './preload';
 
+const QUICK_NOTES = [
+    'Quick note #1',
+    'Quick note #2',
+    'Quick note #3',
+    'Quick note #4',
+    'Quick note #5',
+    'Quick note #6',
+    'Quick note #7',
+    'Quick note #8',
+];
+
 function App() {
     const [connectionState, setConnectionState] =
         useState<ConnectionState>('disconnected');
     const [cues, setCues] = useState<Cue[]>([]);
-    const [ready, setReady] = useState(false);
+    const [readyToNote, setReadyToNote] = useState(false);
     const [activeCue, setActiveCue] = useState<Cue | null>(null);
     const [activeCueNumber, setActiveCueNumber] = useState<string | null>(null);
     const [editingCue, setEditingCue] = useState<Cue | null>(null);
@@ -28,20 +39,20 @@ function App() {
         setEditNoteText(text);
     };
 
-    const saveNote = () => {
-        if (!editingCueNumber) {
-            return;
-        }
+    const applyNoteToCurrentCue = (note: string) => {
+        const targetCueNumber = editingCueNumber || activeCueNumber;
 
-        window.api.updateCueNotes(
-            '1',
-            editingCueNumber,
-            editNoteText.trimEnd(),
-        );
-        cancelEditingNote();
+        if (targetCueNumber) {
+            window.api.updateCueNotes('1', targetCueNumber, note.trimEnd());
+            discardNote();
+        }
     };
 
-    const cancelEditingNote = () => {
+    const saveNote = () => {
+        applyNoteToCurrentCue(editNoteText);
+    };
+
+    const discardNote = () => {
         setEditingCueNumber(null);
         setEditNoteText('');
     };
@@ -96,6 +107,7 @@ function App() {
         setActiveCueNumber(null);
         setEditingCue(null);
         setEditingCueNumber(null);
+        discardNote();
     };
 
     useEffect(() => {
@@ -121,7 +133,7 @@ function App() {
 
     const onKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
-            cancelEditingNote();
+            discardNote();
         }
     };
 
@@ -141,7 +153,7 @@ function App() {
 
         document.addEventListener('keydown', onKeyDown, false);
 
-        () => {
+        return () => {
             for (const removeListener of eventListeners) {
                 removeListener();
             }
@@ -157,32 +169,39 @@ function App() {
     }, [connectionState]);
 
     useEffect(() => {
-        setReady(connectionState === 'connected' && !!activeCueNumber);
-    }, [connectionState, activeCueNumber]);
+        const ready =
+            connectionState === 'connected' && (!!editingCue || !!activeCue);
+
+        setReadyToNote(ready);
+    }, [connectionState, activeCue, editingCue]);
 
     return (
         <div className='flex gap-3 w-screen min-w-screen h-screen min-h-screen p-2 select-none text-white bg-black'>
             <div className='basis-2/3 flex gap-3 flex-col min-w-0'>
                 <div className='grow'>
-                    <QuickNotes disabled={!ready} />
+                    <QuickNoteButtonGrid
+                        disabled={!readyToNote}
+                        quickNotes={QUICK_NOTES}
+                        onNoteTriggered={(note) => applyNoteToCurrentCue(note)}
+                    />
                 </div>
                 <div className='grow-0 shrink-0'>
                     <PlaybackStatusDisplay
                         active={editingCue || activeCue}
-                        disabled={!ready}
+                        disabled={!readyToNote}
                         editing={!!editingCue}
                     />
                 </div>
-                <div className='basis-28 grow-0 shrink-0'>
+                <div className='flex basis-28 grow-0 shrink-0 gap-2'>
                     <NoteInput
-                        disabled={!ready}
+                        disabled={!readyToNote}
                         value={editNoteText}
                         onEnterPressed={saveNote}
                         onTextChanged={onEditNoteTextEdited}
                     />
                 </div>
             </div>
-            <div className='basis-1/3 grow-0 shrink-0 flex gap-3 flex-col'>
+            <div className='basis-1/3 grow-0 shrink-0 flex gap-2 flex-col'>
                 <div className='grow overflow-y-hidden shadow-inner relative'>
                     <CueList
                         cues={cues}
