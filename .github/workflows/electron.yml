@@ -24,6 +24,9 @@ jobs:
 
       - name: Build and package using Electron Forge
         run: yarn package
+        
+      - name: List files
+        run: ls
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
