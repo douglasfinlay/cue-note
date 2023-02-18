@@ -27,6 +27,7 @@ function QuickNoteButtonGrid({
             className='relative rounded bg-eos-grey-dark disabled:opacity-50'
             disabled={disabled}
             onClick={() => triggerNote(index)}
+            tabIndex={-1}
         >
             <div className='flex bottom-1 left-2 items-center absolute text-eos-grey-light text-3xl opacity-20'>
                 {navigator.platform.includes('Mac') ? (

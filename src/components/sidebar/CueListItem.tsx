@@ -46,7 +46,7 @@ function CueListItem({
                 <div className={cueLabelStyle}>{cue.label}</div>
                 <div className='flex gap-2 grow-0 shrink-0'>
                     {onTriggerEdit && (
-                        <button onClick={onTriggerEdit}>
+                        <button onClick={onTriggerEdit} tabIndex={-1}>
                             <svg
                                 xmlns='http://www.w3.org/2000/svg'
                                 width='16'
@@ -61,7 +61,7 @@ function CueListItem({
                     )}
 
                     {onTriggerClear && (
-                        <button onClick={onTriggerClear}>
+                        <button onClick={onTriggerClear} tabIndex={-1}>
                             <svg
                                 xmlns='http://www.w3.org/2000/svg'
                                 width='16'
@@ -76,7 +76,7 @@ function CueListItem({
                     )}
 
                     {onTriggerGoTo && (
-                        <button onClick={onTriggerGoTo}>
+                        <button onClick={onTriggerGoTo} tabIndex={-1}>
                             <svg
                                 xmlns='http://www.w3.org/2000/svg'
                                 width='16'

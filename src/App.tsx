@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
-import NoteInput from './components/NoteInput';
+import { useEffect, useRef, useState } from 'react';
+import NoteInput, { NoteInputHandle } from './components/NoteInput';
 import PlaybackStatusDisplay from './components/PlaybackStatusDisplay';
 import QuickNoteButtonGrid from './components/QuickNoteButtonGrid';
-import ConsoleConnection from './components/sidebar/ConsoleConnection';
+import ConsoleConnection, {
+    ConsoleConnectionHandle
+} from './components/sidebar/ConsoleConnection';
 import CueList from './components/sidebar/CueList';
 import { ConnectionState, Cue } from './models/eos';
 import { RemoveEventListenerFunc } from './preload';
@@ -30,6 +32,9 @@ function App() {
         null,
     );
     const [editNoteText, setEditNoteText] = useState('');
+
+    const refConsoleConnection = useRef<ConsoleConnectionHandle>(null);
+    const refNoteInput = useRef<NoteInputHandle>(null);
 
     const onEditNoteTextEdited = (text: string) => {
         if (!editingCueNumber) {
@@ -60,6 +65,18 @@ function App() {
         setEditingCueNumber(null);
         setEditNoteText('');
     };
+
+    const editCue = (cueNumber: string) => {
+        discardNote();
+        setEditingCueNumber(cueNumber);
+
+        const cue = cues.find((cue) => cue.cueNumber === cueNumber);
+        setEditNoteText(cue?.notes ?? '');
+
+        refNoteInput.current?.focus();
+    };
+
+    const goToCue = (cueNumber: string) => window.api.goToCue(cueNumber);
 
     const onInitialSyncComplete = async () => {
         const cues = await window.api.getCues();
@@ -115,6 +132,12 @@ function App() {
     };
 
     useEffect(() => {
+        if (readyToNote) {
+            refNoteInput.current?.focus();
+        }
+    }, [readyToNote]);
+
+    useEffect(() => {
         if (activeCueNumber) {
             const activeCue = cues.find(
                 (cue) => cue.cueNumber === activeCueNumber,
@@ -157,6 +180,8 @@ function App() {
 
         document.addEventListener('keydown', onKeyDown, false);
 
+        refConsoleConnection.current?.focus();
+
         return () => {
             for (const removeListener of eventListeners) {
                 removeListener();
@@ -169,6 +194,7 @@ function App() {
     useEffect(() => {
         if (connectionState === 'disconnected') {
             clearState();
+            refConsoleConnection.current?.focus();
         }
     }, [connectionState]);
 
@@ -198,6 +224,7 @@ function App() {
                 </div>
                 <div className='flex basis-28 grow-0 shrink-0 gap-2'>
                     <NoteInput
+                        ref={refNoteInput}
                         disabled={!readyToNote}
                         value={editNoteText}
                         onEnterPressed={saveNote}
@@ -244,10 +271,13 @@ function App() {
                         onTriggerClearCue={(cueNumber) =>
                             applyNoteToCue(cueNumber, '')
                         }
+                        onTriggerEditCue={editCue}
+                        onTriggerGoToCue={goToCue}
                     />
                 </div>
                 <div className='grow-0 shrink-0'>
                     <ConsoleConnection
+                        ref={refConsoleConnection}
                         connectionState={connectionState}
                         onTriggerConnect={window.api.connectConsole}
                         onTriggerDisconnect={window.api.disconnectConsole}

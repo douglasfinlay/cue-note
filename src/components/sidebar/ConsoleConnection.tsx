@@ -1,4 +1,11 @@
-import { ChangeEvent, useState } from 'react';
+import {
+    ChangeEvent,
+    forwardRef,
+    KeyboardEvent,
+    useImperativeHandle,
+    useRef,
+    useState,
+} from 'react';
 import { ConnectionState } from '../../models/eos';
 
 const HOSTNAME =
@@ -13,13 +20,26 @@ interface ConsoleConnectionProps {
     onTriggerDisconnect: () => void;
 }
 
-function ConsoleConnection({
-    connectionState,
-    onTriggerConnect,
-    onTriggerDisconnect,
-}: ConsoleConnectionProps) {
+export interface ConsoleConnectionHandle {
+    focus: () => void;
+}
+
+const ConsoleConnection = forwardRef<
+    ConsoleConnectionHandle,
+    ConsoleConnectionProps
+>((props, ref) => {
     const [host, setHost] = useState('');
     const [isHostValid, setIsHostValid] = useState(false);
+
+    const refHostInput = useRef<HTMLInputElement>(null);
+
+    useImperativeHandle(ref, () => {
+        return {
+            focus() {
+                refHostInput.current?.focus();
+            },
+        };
+    });
 
     const onHostChanged = (e: ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.toLowerCase();
@@ -34,36 +54,49 @@ function ConsoleConnection({
         setIsHostValid(valid);
     };
 
+    const onKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            props.onTriggerConnect(host);
+        }
+    };
+
     return (
         <div className='flex'>
             <input
+                ref={refHostInput}
                 type='text'
-                className='flex-grow px-2 rounded bg-black border border-solid border-eos-yellow'
+                className='flex-grow px-2 rounded bg-black border border-solid border-eos-yellow disabled:opacity-50'
                 placeholder='EOS Console IP Address'
+                disabled={props.connectionState !== 'disconnected'}
                 value={host}
                 onChange={onHostChanged}
+                onKeyDown={onKeyDown}
             ></input>
 
-            {connectionState === 'connected' ? (
+            {props.connectionState === 'connected' ? (
                 <button
                     className='px-3 py-1 ml-2 rounded bg-eos-grey-dark border-2 border-solid border-eos-grey-light'
-                    onClick={() => onTriggerDisconnect()}
+                    onClick={() => props.onTriggerDisconnect()}
+                    tabIndex={-1}
                 >
                     Disconnect
                 </button>
             ) : (
                 <button
                     className='px-3 py-1 ml-2 rounded bg-eos-grey-dark border-2 border-solid border-eos-grey-light disabled:opacity-50'
-                    disabled={!isHostValid || connectionState === 'connecting'}
-                    onClick={() => onTriggerConnect(host)}
+                    disabled={
+                        !isHostValid || props.connectionState === 'connecting'
+                    }
+                    onClick={() => props.onTriggerConnect(host)}
+                    tabIndex={-1}
                 >
-                    {connectionState === 'connecting'
+                    {props.connectionState === 'connecting'
                         ? 'Connecting'
                         : 'Connect'}
                 </button>
             )}
         </div>
     );
-}
+});
 
 export default ConsoleConnection;

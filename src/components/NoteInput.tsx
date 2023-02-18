@@ -1,4 +1,12 @@
-import { ChangeEvent, KeyboardEvent, useEffect, useState } from 'react';
+import {
+    ChangeEvent,
+    forwardRef,
+    KeyboardEvent,
+    useEffect,
+    useImperativeHandle,
+    useRef,
+    useState,
+} from 'react';
 
 interface NoteInputProps {
     disabled?: boolean;
@@ -7,22 +15,26 @@ interface NoteInputProps {
     onTextChanged: (text: string) => void;
 }
 
-function NoteInput({
-    disabled = false,
-    value = '',
-    onEnterPressed,
-    onTextChanged,
-}: NoteInputProps) {
-    const [text, setText] = useState(value);
+export interface NoteInputHandle {
+    focus: () => void;
+}
 
-    useEffect(() => {
-        setText(value);
-    }, [value]);
+const NoteInput = forwardRef<NoteInputHandle, NoteInputProps>((props, ref) => {
+    const [text, setText] = useState(props.value);
+    const refTextArea = useRef<HTMLTextAreaElement>(null);
+
+    useImperativeHandle(ref, () => {
+        return {
+            focus() {
+                refTextArea.current?.focus();
+            },
+        };
+    });
 
     const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            onEnterPressed();
+            props.onEnterPressed();
         }
     };
 
@@ -30,19 +42,24 @@ function NoteInput({
         const newValue = e.target.value;
 
         setText(newValue);
-        onTextChanged(newValue);
+        props.onTextChanged(newValue);
     };
+
+    useEffect(() => {
+        setText(props.value);
+    }, [props.value]);
 
     return (
         <textarea
+            ref={refTextArea}
             className='h-full w-full px-3 py-2 text-2xl align-top rounded bg-black border border-solid border-eos-yellow resize-none disabled:opacity-50'
-            disabled={disabled}
+            disabled={props.disabled}
             placeholder='Type your note followed by enter...'
             value={text}
             onChange={onTextChange}
             onKeyDown={onKeyDown}
         ></textarea>
     );
-}
+});
 
 export default NoteInput;
