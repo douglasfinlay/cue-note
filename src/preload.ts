@@ -8,13 +8,19 @@ export type ContextBridgeApi = {
 
     disconnectConsole: () => void;
 
+    getConnectionState: () => Promise<ConnectionState>;
+
     getCues: () => Promise<Cue[]>;
 
     getCurrentCue: () => Promise<Cue | null>;
 
+    getHost: () => Promise<string>,
+
     getPendingCue: () => Promise<Cue | null>;
 
     goToCue: (cueNumber: string) => void;
+
+    isInitialSyncComplete: () => Promise<boolean>;
 
     updateCueNotes: (
         cueListNumber: string,
@@ -52,13 +58,19 @@ const exposedApi: ContextBridgeApi = {
 
     disconnectConsole: () => ipcRenderer.send('console:disconnect'),
 
+    getConnectionState: async () => ipcRenderer.invoke('console:get-connection-state'),
+
     getCues: async () => ipcRenderer.invoke('console:get-cues'),
 
     getCurrentCue: async () => ipcRenderer.invoke('console:get-current-cue'),
 
+    getHost: async () => ipcRenderer.invoke('console:get-host'),
+
     getPendingCue: async () => ipcRenderer.invoke('console:get-pending-cue'),
 
     goToCue: (cueNumber) => ipcRenderer.send('console:go-to-cue', cueNumber),
+
+    isInitialSyncComplete: async () => ipcRenderer.invoke('console:is-initial-sync-complete'),
 
     updateCueNotes: (cueListNumber, cueNumber, notes) =>
         ipcRenderer.send(

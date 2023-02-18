@@ -21,6 +21,7 @@ const QUICK_NOTES = [
 ];
 
 function App() {
+    const [consoleAddress, setConsoleAddress] = useState('');
     const [connectionState, setConnectionState] =
         useState<ConnectionState>('disconnected');
     const [cues, setCues] = useState<Cue[]>([]);
@@ -165,6 +166,20 @@ function App() {
     };
 
     useEffect(() => {
+        if (connectionState === 'disconnected') {
+            clearState();
+            refConsoleConnection.current?.focus();
+        }
+    }, [connectionState]);
+
+    useEffect(() => {
+        const ready =
+            connectionState === 'connected' && (!!editingCue || !!activeCue);
+
+        setReadyToNote(ready);
+    }, [connectionState, activeCue, editingCue]);
+
+    useEffect(() => {
         const eventListeners: RemoveEventListenerFunc[] = [];
 
         eventListeners.push(window.api.onActiveCue(setActiveCueNumber));
@@ -180,6 +195,23 @@ function App() {
 
         document.addEventListener('keydown', onKeyDown, false);
 
+        (async () => {
+            const host = await window.api.getHost();
+            setConsoleAddress(host);
+
+            const connectionState = await window.api.getConnectionState();
+            setConnectionState(connectionState);
+
+            const initialSyncComplete = await window.api.isInitialSyncComplete();
+            if (initialSyncComplete) {
+                const cues = await window.api.getCues();
+                setCues(cues);
+                
+                const activeCue = await window.api.getCurrentCue();
+                setActiveCueNumber(activeCue?.cueNumber ?? null);
+            }
+        })();
+
         refConsoleConnection.current?.focus();
 
         return () => {
@@ -190,20 +222,6 @@ function App() {
             document.removeEventListener('keydown', onKeyDown, false);
         };
     }, []);
-
-    useEffect(() => {
-        if (connectionState === 'disconnected') {
-            clearState();
-            refConsoleConnection.current?.focus();
-        }
-    }, [connectionState]);
-
-    useEffect(() => {
-        const ready =
-            connectionState === 'connected' && (!!editingCue || !!activeCue);
-
-        setReadyToNote(ready);
-    }, [connectionState, activeCue, editingCue]);
 
     return (
         <div className='flex gap-3 w-screen min-w-screen h-screen min-h-screen p-2 select-none text-white bg-black'>
@@ -277,6 +295,7 @@ function App() {
                 </div>
                 <div className='grow-0 shrink-0'>
                     <ConsoleConnection
+                        address={consoleAddress}
                         ref={refConsoleConnection}
                         connectionState={connectionState}
                         onTriggerConnect={window.api.connectConsole}

@@ -2,6 +2,7 @@ import {
     ChangeEvent,
     forwardRef,
     KeyboardEvent,
+    useEffect,
     useImperativeHandle,
     useRef,
     useState,
@@ -16,6 +17,7 @@ const IPV6_ADDRESS = /^(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}$/;
 
 interface ConsoleConnectionProps {
     connectionState: ConnectionState;
+    address?: string;
     onTriggerConnect: (address: string) => void;
     onTriggerDisconnect: () => void;
 }
@@ -59,6 +61,10 @@ const ConsoleConnection = forwardRef<
             props.onTriggerConnect(host);
         }
     };
+
+    useEffect(() => {
+        setHost(props.address ?? '');
+    }, [props.address]);
 
     return (
         <div className='flex'>

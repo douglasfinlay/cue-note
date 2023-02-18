@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { Message, TCPSocketPort } from 'osc';
-import { Cue } from '../models/eos';
+import { ConnectionState, Cue } from '../models/eos';
 
 type RecordTargetUid = string;
 
@@ -18,6 +18,7 @@ const CUE_CHANGED_OSC_ADDRESS =
 
 export class EosConsole extends EventEmitter {
     private oscConnection: TCPSocketPort;
+    private connectionState: ConnectionState = 'disconnected';
     private initialSyncComplete = false;
     private syncInProgress = false;
 
@@ -31,23 +32,26 @@ export class EosConsole extends EventEmitter {
     private activeCueNumber: string | null = null;
     private pendingCueNumber: string | null = null;
 
-    constructor(private address: string, private port = 3037) {
+    constructor(public readonly host: string, public readonly port = 3037) {
         super();
 
-        this.oscConnection = new TCPSocketPort({ address, port });
+        this.oscConnection = new TCPSocketPort({ address: host, port });
     }
 
     connect() {
         console.log(
-            `Connecting to EOS console at ${this.address}:${this.port}`,
+            `Connecting to EOS console at ${this.host}:${this.port}`,
         );
 
-        this.oscConnection.open(this.address, this.port);
+        this.oscConnection.open(this.host, this.port);
+
+        this.connectionState = 'connecting';
         this.emit('connecting');
 
         this.oscConnection.once('ready', () => {
             console.log('Connected');
 
+            this.connectionState = 'connected';
             this.emit('connected');
 
             this.oscConnection.send({
@@ -69,7 +73,9 @@ export class EosConsole extends EventEmitter {
         this.oscConnection.once('close', () => {
             console.log('EOS connection closed');
 
+            this.connectionState = 'disconnected';
             this.emit('disconnected');
+
             this.oscConnection.removeAllListeners();
         });
 
@@ -119,6 +125,14 @@ export class EosConsole extends EventEmitter {
                 return cue;
             }
         }
+    }
+
+    get consoleConnectionState(): ConnectionState {
+        return this.connectionState;
+    }
+
+    get isInitialSyncComplete(): boolean {
+        return this.initialSyncComplete;
     }
 
     get pendingCue(): Cue | undefined {

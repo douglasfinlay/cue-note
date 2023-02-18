@@ -118,11 +118,17 @@ ipcMain.handle('console:get-cues', () => eos?.getCues() ?? []);
 
 ipcMain.handle('console:get-current-cue', () => eos?.activeCue);
 
+ipcMain.handle('console:get-host', () => eos?.host);
+
 ipcMain.handle('console:get-pending-cue', () => eos?.pendingCue);
 
 ipcMain.on('console:go-to-cue', (_event, ...[cueNumber]) =>
     eos?.fireCue(1, cueNumber),
 );
+
+ipcMain.handle('console:get-connection-state', () => eos?.consoleConnectionState ?? 'disconnected');
+
+ipcMain.handle('console:is-initial-sync-complete', () => eos?.isInitialSyncComplete ?? false);
 
 ipcMain.on(
     'console:update-cue-notes',
