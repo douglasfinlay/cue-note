@@ -23,4 +23,4 @@ jobs:
         run: yarn install
 
       - name: Publish using Electron Forge
-        run: yarn publish
+        run: yarn run publish
