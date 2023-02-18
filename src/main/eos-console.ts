@@ -147,6 +147,14 @@ export class EosConsole extends EventEmitter {
         }
     }
 
+    getShowName(): string | undefined {
+        if (!this.showName) {
+            return;
+        }
+
+        return this.showName;
+    }
+
     private checkInitialSyncComplete() {
         const complete =
             !!this.eosVersion && !!this.showName && this.cuesLeftToSync === 0;
