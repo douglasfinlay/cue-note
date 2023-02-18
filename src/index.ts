@@ -26,6 +26,7 @@ const createWindow = (): void => {
         title: INITIAL_WINDOW_TITLE,
         width: 800,
         webPreferences: {
+            devTools: !app.isPackaged,
             preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
         },
     });
