@@ -22,11 +22,8 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      - name: Build and package using Electron Forge
-        run: yarn package
-        
-      - name: List files
-        run: ls -R out
+      - name: Make distributables using Electron Forge
+        run: yarn make
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
