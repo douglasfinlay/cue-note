@@ -3,7 +3,7 @@ name: Build/release
 on: push
 
 jobs:
-  release:
+  package:
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -13,11 +13,22 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v3
+
       - name: Setup Node.js environment
         uses: actions/setup-node@v3
         with:
           node-version: 16
+
       - name: Install dependencies
         run: yarn install
-      - name: Build and package
+
+      - name: Build and package using Electron Forge
         run: yarn package
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: make
+          path: |
+            out/make/
+          retention-days: 3
