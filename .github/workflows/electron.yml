@@ -22,13 +22,5 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      - name: Build and package using Electron Forge
-        run: yarn package
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: make
-          path: |
-            out/make/
-          retention-days: 3
+      - name: Publish using Electron Forge
+        run: yarn publish
