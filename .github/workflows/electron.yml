@@ -2,6 +2,9 @@ name: Build/release
 
 on: push
 
+permissions:
+  contents: write
+
 jobs:
   package:
     runs-on: ${{ matrix.os }}
