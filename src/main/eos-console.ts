@@ -20,11 +20,11 @@ export class EosConsole extends EventEmitter {
     private oscConnection: TCPSocketPort;
     private connectionState: ConnectionState = 'disconnected';
     private initialSyncComplete = false;
-    private syncInProgress = false;
 
     private eosVersion: string | null = null;
     private showName: string | null = null;
 
+    private cuesCount = 0;
     private cuesLeftToSync = Infinity;
     private cuesByRecordTargetUid = new Map<RecordTargetUid, Cue>();
     private recordTargetUidByCueNumber = new Map<string, RecordTargetUid>();
@@ -39,9 +39,7 @@ export class EosConsole extends EventEmitter {
     }
 
     connect() {
-        console.log(
-            `Connecting to EOS console at ${this.host}:${this.port}`,
-        );
+        console.log(`Connecting to EOS console at ${this.host}:${this.port}`);
 
         this.oscConnection.open(this.host, this.port);
 
@@ -131,6 +129,21 @@ export class EosConsole extends EventEmitter {
         return this.connectionState;
     }
 
+    get initialSyncProgress(): number | undefined {
+        if (this.initialSyncComplete) {
+            return;
+        }
+
+        if (!isFinite(this.cuesLeftToSync)) {
+            // Haven't yet received the total cue count, so treat sync as not started
+            return 0.0;
+        }
+
+        return this.cuesLeftToSync <= 0
+            ? 1.0
+            : 1 - this.cuesLeftToSync / this.cuesCount;
+    }
+
     get isInitialSyncComplete(): boolean {
         return this.initialSyncComplete;
     }
@@ -198,6 +211,7 @@ export class EosConsole extends EventEmitter {
                 return;
             }
 
+            this.cuesCount = msg.args[0];
             this.cuesLeftToSync = msg.args[0];
 
             for (let i = 0; i < this.cuesLeftToSync; i++) {

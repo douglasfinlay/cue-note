@@ -132,6 +132,8 @@ ipcMain.handle('console:get-current-cue', () => eos?.activeCue);
 
 ipcMain.handle('console:get-host', () => eos?.host);
 
+ipcMain.handle('console:get-initial-sync-progress', () => eos?.initialSyncProgress);
+
 ipcMain.handle('console:get-pending-cue', () => eos?.pendingCue);
 
 ipcMain.on('console:go-to-cue', (_event, ...[cueNumber]) =>

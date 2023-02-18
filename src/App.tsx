@@ -3,7 +3,7 @@ import NoteInput, { NoteInputHandle } from './components/NoteInput';
 import PlaybackStatusDisplay from './components/PlaybackStatusDisplay';
 import QuickNoteButtonGrid from './components/QuickNoteButtonGrid';
 import ConsoleConnection, {
-    ConsoleConnectionHandle
+    ConsoleConnectionHandle,
 } from './components/sidebar/ConsoleConnection';
 import CueList from './components/sidebar/CueList';
 import { ConnectionState, Cue } from './models/eos';
@@ -24,6 +24,9 @@ function App() {
     const [consoleAddress, setConsoleAddress] = useState('');
     const [connectionState, setConnectionState] =
         useState<ConnectionState>('disconnected');
+    const [initialSyncProgress, setInitialSyncProgress] = useState<
+        number | undefined
+    >();
     const [cues, setCues] = useState<Cue[]>([]);
     const [readyToNote, setReadyToNote] = useState(false);
     const [activeCue, setActiveCue] = useState<Cue | null>(null);
@@ -169,6 +172,8 @@ function App() {
         if (connectionState === 'disconnected') {
             clearState();
             refConsoleConnection.current?.focus();
+        } else if (connectionState === 'connected') {
+            updateInitialSyncProgress();
         }
     }, [connectionState]);
 
@@ -202,13 +207,16 @@ function App() {
             const connectionState = await window.api.getConnectionState();
             setConnectionState(connectionState);
 
-            const initialSyncComplete = await window.api.isInitialSyncComplete();
+            const initialSyncComplete =
+                await window.api.isInitialSyncComplete();
             if (initialSyncComplete) {
                 const cues = await window.api.getCues();
                 setCues(cues);
-                
+
                 const activeCue = await window.api.getCurrentCue();
                 setActiveCueNumber(activeCue?.cueNumber ?? null);
+            } else {
+                updateInitialSyncProgress();
             }
         })();
 
@@ -222,6 +230,16 @@ function App() {
             document.removeEventListener('keydown', onKeyDown, false);
         };
     }, []);
+
+    const updateInitialSyncProgress = async () => {
+        const progress = await window.api.getInitialSyncProgress();
+        setInitialSyncProgress(progress);
+
+        if (progress !== undefined && progress < 1) {
+            // There is still work to be done, check again later
+            setTimeout(updateInitialSyncProgress, 10);
+        }
+    };
 
     return (
         <div className='flex gap-3 w-screen min-w-screen h-screen min-h-screen p-2 select-none text-white bg-black'>
@@ -295,9 +313,10 @@ function App() {
                 </div>
                 <div className='grow-0 shrink-0'>
                     <ConsoleConnection
-                        address={consoleAddress}
                         ref={refConsoleConnection}
+                        address={consoleAddress}
                         connectionState={connectionState}
+                        syncProgress={initialSyncProgress}
                         onTriggerConnect={window.api.connectConsole}
                         onTriggerDisconnect={window.api.disconnectConsole}
                     />
