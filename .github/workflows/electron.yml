@@ -23,4 +23,6 @@ jobs:
         run: yarn install
 
       - name: Publish using Electron Forge
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: yarn run publish
