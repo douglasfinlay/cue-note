@@ -96,6 +96,15 @@ export class EosConsole extends EventEmitter {
         this.oscConnection.send(msg);
     }
 
+    fireCue(cueListNumber: number, cueNumber: string) {
+        const msg: Message = {
+            address: `/eos/cue/${cueListNumber}/${cueNumber}/fire`,
+            args: [],
+        };
+
+        this.oscConnection.send(msg);
+    }
+
     getCues(): Cue[] {
         return Array.from(this.cuesByRecordTargetUid.values());
     }

@@ -121,7 +121,7 @@ ipcMain.handle('console:get-current-cue', () => eos?.activeCue);
 ipcMain.handle('console:get-pending-cue', () => eos?.pendingCue);
 
 ipcMain.on('console:go-to-cue', (_event, ...[cueNumber]) =>
-    console.log('GO TO CUE', cueNumber),
+    eos?.fireCue(1, cueNumber),
 );
 
 ipcMain.on(
