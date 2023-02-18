@@ -26,7 +26,7 @@ jobs:
         run: yarn package
         
       - name: List files
-        run: ls
+        run: ls -R out
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
