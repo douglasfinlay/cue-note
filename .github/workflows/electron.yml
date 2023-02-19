@@ -1,12 +1,15 @@
-name: Build/release
+name: Release
 
-on: push
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
 
 permissions:
   contents: write
 
 jobs:
-  package:
+  publish:
     runs-on: ${{ matrix.os }}
 
     strategy:
