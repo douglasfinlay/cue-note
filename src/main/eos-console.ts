@@ -53,6 +53,11 @@ export class EosConsole extends EventEmitter {
             this.emit('connected');
 
             this.oscConnection.send({
+                address: '/eos/user',
+                args: [0],
+            });
+
+            this.oscConnection.send({
                 address: '/eos/get/version',
                 args: [],
             });
