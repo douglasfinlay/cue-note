@@ -16,8 +16,7 @@
         "name": "Douglas Finlay",
         "email": "douglas@douglasfinlay.com"
     },
-    "license": "UNLICENSED",
-    "private": true,
+    "license": "MIT",
     "devDependencies": {
         "@electron-forge/cli": "^6.0.4",
         "@electron-forge/maker-dmg": "^6.0.5",
