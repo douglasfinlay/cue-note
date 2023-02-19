@@ -326,14 +326,16 @@ export class EosConsole extends EventEmitter {
         }
 
         if (args.length < 31) {
+            console.warn(`Not enough arguments to get cue notes from response`);
+        } else if (args.length < 3) {
             console.error(
-                `Unexpected number of arguments for cue message (expect at least 31, got ${msg.args.length})`,
+                `Cannot process cue message arguments (expect at least 3, got ${msg.args.length})`,
             );
             return;
         }
 
         const label = args[2];
-        const notes = args[27];
+        const notes = args[27] || '';
         const isPart = args[30] >= 0;
 
         // TODO: handle cue parts
