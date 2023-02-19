@@ -1,9 +1,8 @@
-import type { ForgeConfig } from '@electron-forge/shared-types';
+import { MakerDMG } from '@electron-forge/maker-dmg';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
-import { MakerZIP } from '@electron-forge/maker-zip';
-import { MakerDeb } from '@electron-forge/maker-deb';
-import { MakerRpm } from '@electron-forge/maker-rpm';
 import { WebpackPlugin } from '@electron-forge/plugin-webpack';
+import { PublisherGithub } from '@electron-forge/publisher-github';
+import type { ForgeConfig } from '@electron-forge/shared-types';
 
 import { mainConfig } from './webpack.main.config';
 import { rendererConfig } from './webpack.renderer.config';
@@ -13,9 +12,16 @@ const config: ForgeConfig = {
     rebuildConfig: {},
     makers: [
         new MakerSquirrel({}),
-        new MakerZIP({}, ['darwin']),
-        new MakerRpm({}),
-        new MakerDeb({}),
+        new MakerDMG({}),
+    ],
+    publishers: [
+        new PublisherGithub({
+            repository: {
+                owner: 'douglasfinlay',
+                name: 'cue-note',
+            },
+            draft: true
+        }),
     ],
     plugins: [
         new WebpackPlugin({
