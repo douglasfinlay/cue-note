@@ -1,8 +1,8 @@
 {
     "name": "cue-note",
     "productName": "cue-note",
-    "version": "1.0.0",
-    "description": "My Electron application description",
+    "version": "0.1.0",
+    "description": "Note-taking utility for ETC Eos Family lighting consoles",
     "main": ".webpack/main",
     "scripts": {
         "start": "electron-forge start",
