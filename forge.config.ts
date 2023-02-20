@@ -10,17 +10,15 @@ import { rendererConfig } from './webpack.renderer.config';
 const config: ForgeConfig = {
     packagerConfig: {},
     rebuildConfig: {},
-    makers: [
-        new MakerSquirrel({}),
-        new MakerDMG({}),
-    ],
+    makers: [new MakerDMG({}), new MakerSquirrel({})],
     publishers: [
         new PublisherGithub({
+            draft: true,
             repository: {
                 owner: 'douglasfinlay',
                 name: 'cue-note',
             },
-            draft: true
+            tagPrefix: '',
         }),
     ],
     plugins: [
