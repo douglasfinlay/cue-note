@@ -1,16 +1,25 @@
 interface QuickNotesProps {
+    buttonCount?: number;
     disabled?: boolean;
     quickNotes: string[];
     onNoteTriggered: (note: string) => void;
 }
 
 function QuickNoteButtonGrid({
+    buttonCount = 8,
     disabled = false,
     quickNotes,
     onNoteTriggered,
 }: QuickNotesProps) {
-    if (quickNotes.length !== 8) {
-        throw new Error('Quick notes must have length 8');
+    if (quickNotes.length < 8) {
+        for (let i = 0; i < buttonCount - quickNotes.length; i++) {
+            quickNotes.push('');
+        }
+    } else if (quickNotes.length > 8) {
+        console.warn(
+            'Too many notes passed to QuickNoteButtonGrid, extras will be ignored',
+        );
+        quickNotes = quickNotes.slice(0, 8);
     }
 
     const triggerNote = (index: number) => {
@@ -25,7 +34,7 @@ function QuickNoteButtonGrid({
         <button
             key={index}
             className='relative rounded bg-eos-grey-dark disabled:opacity-50'
-            disabled={disabled}
+            disabled={disabled || !note.length}
             onClick={() => triggerNote(index)}
             tabIndex={-1}
         >

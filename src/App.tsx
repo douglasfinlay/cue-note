@@ -9,17 +9,6 @@ import CueList from './components/sidebar/CueList';
 import { ConnectionState, Cue } from './models/eos';
 import { RemoveEventListenerFunc } from './preload';
 
-const QUICK_NOTES = [
-    'Quick note #1',
-    'Quick note #2',
-    'Quick note #3',
-    'Quick note #4',
-    'Quick note #5',
-    'Quick note #6',
-    'Quick note #7',
-    'Quick note #8',
-];
-
 function App() {
     const [consoleAddress, setConsoleAddress] = useState('');
     const [connectionState, setConnectionState] =
@@ -36,6 +25,7 @@ function App() {
         null,
     );
     const [editNoteText, setEditNoteText] = useState('');
+    const [quickNotes, setQuickNotes] = useState<string[]>([]);
 
     const refConsoleConnection = useRef<ConsoleConnectionHandle>(null);
     const refNoteInput = useRef<NoteInputHandle>(null);
@@ -201,6 +191,9 @@ function App() {
         document.addEventListener('keydown', onKeyDown, false);
 
         (async () => {
+            const quickNotes = await window.api.getQuickNotes();
+            setQuickNotes(quickNotes);
+
             const host = await window.api.getHost();
             setConsoleAddress(host);
 
@@ -247,7 +240,7 @@ function App() {
                 <div className='grow'>
                     <QuickNoteButtonGrid
                         disabled={!readyToNote}
-                        quickNotes={QUICK_NOTES}
+                        quickNotes={quickNotes}
                         onNoteTriggered={(note) => applyNoteToCurrentCue(note)}
                     />
                 </div>
