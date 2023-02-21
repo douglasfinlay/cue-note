@@ -236,16 +236,18 @@ export class EosConsole extends EventEmitter {
             this.pendingCueNumber = msg.address.split('/')[6];
             this.emit('pending-cue', this.pendingCueNumber);
         } else if (CUE_CHANGED_OSC_ADDRESS.test(msg.address)) {
-            // TODO: collect changed cue numbers from arg index 1 onwards. Each arg is either a single target number or
-            // a hyphenated range.
-            const cueNumber = msg.args[1];
+            const changedTargets = expandTargetNumberArguments(
+                msg.args.slice(1),
+            );
 
-            const getCueMsg: Message = {
-                address: `/eos/get/cue/1/${cueNumber}`,
-                args: [],
-            };
+            for (const cueNumber of changedTargets) {
+                const getCueMsg: Message = {
+                    address: `/eos/get/cue/1/${cueNumber}`,
+                    args: [],
+                };
 
-            this.oscConnection.send(getCueMsg);
+                this.oscConnection.send(getCueMsg);
+            }
         }
 
         if (!this.initialSyncComplete) {
@@ -403,5 +405,52 @@ export class EosConsole extends EventEmitter {
         }
 
         this.emit(updating ? 'cue:updated' : 'cue:created', cue);
+    }
+}
+
+/**
+ * Parses and expands a target number range into individual target numbers. Target numbers that are not whole will be
+ * kept as strings. For example:
+ *   - "1.23" => "1.23"
+ *   - "3-5" => [3, 4, 5]
+ */
+function expandTargetNumberArguments(args: Argument[]): string[] {
+    const expandedArgs = args.flatMap((arg) => {
+        switch (typeof arg) {
+            case 'number':
+                return String(arg);
+            case 'string':
+                return parseStringTargetNumberRange(arg);
+            default:
+                console.error(
+                    `unexpected target number argument type: ${typeof arg}`,
+                );
+                return [];
+        }
+    });
+
+    // Remove duplicate target numbers
+    return Array.from(new Set(expandedArgs));
+}
+
+function parseStringTargetNumberRange(arg: string): string[] {
+    const parts = arg.split('-');
+
+    if (parts.length === 1) {
+        return [parts[0]];
+    } else if (parts.length === 2) {
+        const lower = Number(parts[0]);
+        const upper = Number(parts[1]);
+
+        const targetNumbers: string[] = [];
+
+        for (let i = lower; i <= upper; i++) {
+            targetNumbers.push(String(i));
+        }
+
+        return targetNumbers;
+    } else {
+        console.error(`malformed target number argument: ${arg}`);
+        return [];
     }
 }
