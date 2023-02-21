@@ -48,7 +48,23 @@ _Cue Note_ is available for Windows and macOS. Download the latest binary for yo
 
 ## Usage
 
-TODO
+Connect to an Eos console via IP address or hostname. Please ensure _Third Party OSC_ is enabled.
+
+### Quick Note Buttons
+
+The notes applied by the quick note buttons are configured using a file. Each line corresponds to one of the 8 buttons.
+
+#### Windows
+
+```
+%APPDATA%\Cue Note\quick-notes
+```
+
+#### macOS
+
+```
+~/Library/Application Support/Cue Note/quick-notes
+```
 
 ## Roadmap
 
