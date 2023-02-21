@@ -1,6 +1,8 @@
 declare module 'osc' {
     import type { EventEmitter } from 'events';
 
+    export type Address = string;
+
     export type TypeTag =
         | 'i'
         | 'h'
@@ -30,7 +32,7 @@ declare module 'osc' {
     export type Packet = Message | Bundle;
 
     export type Message = {
-        address: string;
+        address: Address;
         args: Argument[];
     };
 

@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { Message, TCPSocketPort } from 'osc';
+import { Address, Argument, Message, TCPSocketPort } from 'osc';
 import { ConnectionState, Cue } from '../models/eos';
 
 type RecordTargetUid = string;
@@ -31,6 +31,8 @@ export class EosConsole extends EventEmitter {
 
     private activeCueNumber: string | null = null;
     private pendingCueNumber: string | null = null;
+
+    private argumentListCache = new Map<Address, Argument[]>();
 
     constructor(public readonly host: string, public readonly port = 3037) {
         super();
@@ -291,16 +293,59 @@ export class EosConsole extends EventEmitter {
         //     29: <bool: scene end>
         //     30: <cue part index> (-1 if not a part of a cue, the index otherwise)
 
+        let args = msg.args;
         const addressParts = msg.address.split('/');
+
+        if (addressParts.length >= 8) {
+            // We don't care about cue actions, fx, links
+            if (addressParts[8] !== 'list') {
+                return;
+            }
+
+            const argListIndex = Number(addressParts[9]);
+            const argListCount = Number(addressParts[10]);
+
+            if (argListCount > 0 && argListCount !== args.length) {
+                // Packet re-assembly is required
+                const cacheKey = addressParts.slice(0, 8).join('/');
+
+                // First packet; create a cache entry with the partial argument list
+                if (argListIndex === 0) {
+                    this.argumentListCache.set(cacheKey, msg.args);
+                    return;
+                }
+
+                // Otherwise keep collecting args until we have received the expected amount
+                const cachedArgs = this.argumentListCache.get(cacheKey);
+
+                if (!cachedArgs) {
+                    console.error(
+                        `no argument cache entry found for message: ${msg.address}`,
+                    );
+                    return;
+                }
+
+                cachedArgs.splice(argListIndex, args.length, ...args);
+
+                if (cachedArgs.length !== argListCount) {
+                    // Don't process the cue yet as we're expecting to receive more args
+                    return;
+                }
+
+                // We're ready to process the cue
+                args = cachedArgs;
+                this.argumentListCache.delete(cacheKey);
+            }
+        }
+
+        const uid = args[1];
+
         const cueListNumber = Number(addressParts[5]);
         const cueNumber = addressParts[6];
         const cuePartNumber = Number(addressParts[7]);
 
-        const args = msg.args;
-        const uid = args[1];
-
         if (!uid) {
-            // Cue no longer exists on console; find our copy and delete it
+            // Cue no longer exists on the console; find our copy and delete it
             const deletedCueUid =
                 this.recordTargetUidByCueNumber.get(cueNumber);
 
@@ -310,9 +355,6 @@ export class EosConsole extends EventEmitter {
                     this.cuesByRecordTargetUid.get(deletedCueUid);
                 this.cuesByRecordTargetUid.delete(deletedCueUid);
 
-                console.log('CUE DELETED');
-                console.log(deletedCue);
-
                 this.emit('cue:deleted', deletedCue);
             }
 
@@ -321,26 +363,15 @@ export class EosConsole extends EventEmitter {
 
         // At this point the cue was either added or updated
 
-        // TODO: handle list convention for large packets
-        // const listIndex = Number(addressParts[9]);
-        // const listCount = Number(addressParts[10]);
-
-        // We don't care about cue actions, fx, links
-        if (addressParts[8] !== 'list') {
-            return;
-        }
-
         if (args.length < 31) {
-            console.warn(`Not enough arguments to get cue notes from response`);
-        } else if (args.length < 3) {
             console.error(
-                `Cannot process cue message arguments (expect at least 3, got ${msg.args.length})`,
+                `Cannot process cue message arguments (expect at least 31, got ${msg.args.length})`,
             );
             return;
         }
 
         const label = args[2];
-        const notes = args[27] || '';
+        const notes = args[27];
         const isPart = args[30] >= 0;
 
         // TODO: handle cue parts
