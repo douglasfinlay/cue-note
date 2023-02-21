@@ -7,3 +7,7 @@ body {
         segoe ui, helvetica neue, helvetica, Cantarell, Ubuntu, roboto, noto,
         arial, sans-serif;
 }
+
+.scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+}
