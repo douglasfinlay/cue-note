@@ -70,8 +70,6 @@ function App() {
         refNoteInput.current?.focus();
     };
 
-    const goToCue = (cueNumber: string) => window.api.goToCue(cueNumber);
-
     const onInitialSyncComplete = async () => {
         const cues = await window.api.getCues();
         setCues(cues);
@@ -301,7 +299,6 @@ function App() {
                             applyNoteToCue(cueNumber, '')
                         }
                         onTriggerEditCue={editCue}
-                        onTriggerGoToCue={goToCue}
                     />
                 </div>
                 <div className='grow-0 shrink-0'>
