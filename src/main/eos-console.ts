@@ -374,6 +374,8 @@ export class EosConsole extends EventEmitter {
 
         const label = args[2];
         const notes = args[27];
+        const scene = args[28];
+        const isSceneEnd = !!args[29];
         const isPart = args[30] >= 0;
 
         // TODO: handle cue parts
@@ -383,13 +385,15 @@ export class EosConsole extends EventEmitter {
         }
 
         const cue: Cue = {
-            uid,
             cueListNumber,
             cueNumber,
             cuePartNumber,
             isPart,
+            isSceneEnd,
             label,
             notes,
+            scene,
+            uid,
         };
 
         const updating = this.cuesByRecordTargetUid.has(uid);

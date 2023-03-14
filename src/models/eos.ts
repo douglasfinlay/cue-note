@@ -11,6 +11,8 @@ export interface Cue extends RecordTarget {
     cueNumber: string;
     cuePartNumber: number;
     isPart: boolean;
+    isSceneEnd: boolean;
     label: string;
+    scene: string;
     notes: string;
 }
