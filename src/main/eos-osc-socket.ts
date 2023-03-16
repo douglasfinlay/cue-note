@@ -3,15 +3,26 @@ import { Duplex } from 'node:stream';
 import * as osc from 'osc-min';
 import * as slip from 'slip';
 
+/**
+ * Regular expression to match an OSC list-convention address ending with `/list/<list index>/<list count>`.
+ */
+const EOS_OSC_LIST_ADDRESS = /\/list\/(\d+)\/(\d+)$/;
+
 export type EosOscMessage = {
     address: string;
     args: any[];
 };
 
 /**
- * SLIP-encoded OSC message stream.
+ * A SLIP-encoded OSC message stream.
+ *
+ * Messages split using the Eos OSC list convention will be held until all parts have been received. Once a complete
+ * message is received, it will be emitted as a single message without the list convention address parts (without the
+ * `/list/<list index>/<list count>` suffix).
  */
 export class EosOscStream extends Duplex {
+    private argumentListCache = new Map<string, any[]>();
+
     private readingPaused = false;
 
     private slipDecoder = new slip.Decoder({
@@ -88,6 +99,53 @@ export class EosOscStream extends Duplex {
             address: (packet as osc.Message).address,
             args: (packet as osc.Message).args.map((arg) => arg.value),
         };
+
+        this.onMessageReceived(msg);
+    }
+
+    private onMessageReceived(msg: EosOscMessage) {
+        const matches = EOS_OSC_LIST_ADDRESS.exec(msg.address);
+
+        if (matches) {
+            // Strip the `/list/<list index>/<list count>` suffix
+            msg.address = msg.address.substring(0, matches.index);
+
+            const argListCount = parseInt(matches[2]);
+
+            // If a partial set of args has been received, cache them and wait for more messages
+            if (msg.args.length < argListCount) {
+                const argListIndex = parseInt(matches[1]);
+
+                if (argListIndex === 0) {
+                    // First message; create a cache entry with the partial argument list
+                    this.argumentListCache.set(msg.address, msg.args);
+                    return;
+                }
+
+                // Otherwise keep collecting args until we have received the expected amount
+                const cachedArgs = this.argumentListCache.get(msg.address);
+
+                if (!cachedArgs) {
+                    console.error(
+                        `no arg cache entry found for "${msg.address}"`,
+                    );
+                    return;
+                }
+
+                // Accumulate args
+                cachedArgs.splice(argListIndex, msg.args.length, ...msg.args);
+
+                if (cachedArgs.length < argListCount) {
+                    // Don't release the message yet as we're expecting more args
+                    return;
+                }
+
+                // At this point all args have been received, so release the message with its full argument set and
+                // remove from the cache
+                msg.args = cachedArgs;
+                this.argumentListCache.delete(msg.address);
+            }
+        }
 
         // Add message to read buffer
         const hasSpace = this.push(msg);

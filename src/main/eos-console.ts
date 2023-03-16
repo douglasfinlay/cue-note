@@ -13,8 +13,7 @@ const ACTIVE_CUE_OSC_ADDRESS =
 const PENDING_CUE_OSC_ADDRESS =
     /^\/eos\/out\/pending\/cue\/1\/(?<cueNumber>\d+|\d+.\d+$)/;
 
-const CUE_CHANGED_OSC_ADDRESS =
-    /^\/eos\/out\/notify\/cue\/1\/list\/(?<listIndex>\d+)\/(?<listCount>\d+)$/;
+const CUE_CHANGED_OSC_ADDRESS = /^\/eos\/out\/notify\/cue\/1$/;
 
 export class EosConsole extends EventEmitter {
     private socket: EosOscStream | null = null;
@@ -31,8 +30,6 @@ export class EosConsole extends EventEmitter {
 
     private activeCueNumber: string | null = null;
     private pendingCueNumber: string | null = null;
-
-    private argumentListCache = new Map<string, any[]>();
 
     constructor(public readonly host: string, public readonly port = 3037) {
         super();
@@ -265,7 +262,7 @@ export class EosConsole extends EventEmitter {
     }
 
     private handleCueMessage(msg: EosOscMessage) {
-        // Address: /eos/out/get/cue/<cue list number>/<cue number>/<cue part number>/list/<list index>/<list count>
+        // Address: /eos/out/get/cue/<cue list number>/<cue number>/<cue part number>
         //
         // Arguments:
         //      0: <uint32: index>
@@ -300,56 +297,17 @@ export class EosConsole extends EventEmitter {
         //     29: <bool: scene end>
         //     30: <cue part index> (-1 if not a part of a cue, the index otherwise)
 
-        let args = msg.args;
         const addressParts = msg.address.split('/');
 
-        if (addressParts.length >= 8) {
-            // We don't care about cue actions, fx, links
-            if (addressParts[8] !== 'list') {
-                return;
-            }
-
-            const argListIndex = Number(addressParts[9]);
-            const argListCount = Number(addressParts[10]);
-
-            if (argListCount > 0 && argListCount !== args.length) {
-                // Packet re-assembly is required
-                const cacheKey = addressParts.slice(0, 8).join('/');
-
-                // First packet; create a cache entry with the partial argument list
-                if (argListIndex === 0) {
-                    this.argumentListCache.set(cacheKey, msg.args);
-                    return;
-                }
-
-                // Otherwise keep collecting args until we have received the expected amount
-                const cachedArgs = this.argumentListCache.get(cacheKey);
-
-                if (!cachedArgs) {
-                    console.error(
-                        `no argument cache entry found for message: ${msg.address}`,
-                    );
-                    return;
-                }
-
-                cachedArgs.splice(argListIndex, args.length, ...args);
-
-                if (cachedArgs.length !== argListCount) {
-                    // Don't process the cue yet as we're expecting to receive more args
-                    return;
-                }
-
-                // We're ready to process the cue
-                args = cachedArgs;
-                this.argumentListCache.delete(cacheKey);
-            }
+        // We don't care about cue actions, fx, links
+        if (addressParts.length > 8) {
+            return;
         }
 
-        const uid = args[1];
+        const args = msg.args;
 
-        const cueListNumber = Number(addressParts[5]);
+        const uid = args[1];
         const cueNumber = addressParts[6];
-        const cuePartNumber = Number(addressParts[7]);
 
         if (!uid) {
             // Cue no longer exists on the console; find our copy and delete it
@@ -377,10 +335,6 @@ export class EosConsole extends EventEmitter {
             return;
         }
 
-        const label = args[2];
-        const notes = args[27];
-        const scene = args[28];
-        const isSceneEnd = !!args[29];
         const isPart = args[30] >= 0;
 
         // TODO: handle cue parts
@@ -390,14 +344,14 @@ export class EosConsole extends EventEmitter {
         }
 
         const cue: Cue = {
-            cueListNumber,
+            cueListNumber: Number(addressParts[5]),
             cueNumber,
-            cuePartNumber,
+            cuePartNumber: Number(addressParts[7]),
             isPart,
-            isSceneEnd,
-            label,
-            notes,
-            scene,
+            isSceneEnd: !!args[29],
+            label: args[2],
+            notes: args[27],
+            scene: args[28],
             uid,
         };
 
