@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
-import { Address, Argument, Message, TCPSocketPort } from 'osc';
 import { ConnectionState, Cue } from '../models/eos';
+import { EosOscStream, EosOscMessage } from './eos-osc-socket';
 
 type RecordTargetUid = string;
 
@@ -17,7 +17,7 @@ const CUE_CHANGED_OSC_ADDRESS =
     /^\/eos\/out\/notify\/cue\/1\/list\/(?<listIndex>\d+)\/(?<listCount>\d+)$/;
 
 export class EosConsole extends EventEmitter {
-    private oscConnection: TCPSocketPort;
+    private socket: EosOscStream | null = null;
     private connectionState: ConnectionState = 'disconnected';
     private initialSyncComplete = false;
 
@@ -32,66 +32,71 @@ export class EosConsole extends EventEmitter {
     private activeCueNumber: string | null = null;
     private pendingCueNumber: string | null = null;
 
-    private argumentListCache = new Map<Address, Argument[]>();
+    private argumentListCache = new Map<string, any[]>();
 
     constructor(public readonly host: string, public readonly port = 3037) {
         super();
-
-        this.oscConnection = new TCPSocketPort({ address: host, port });
     }
 
     connect() {
         console.log(`Connecting to EOS console at ${this.host}:${this.port}`);
 
-        this.oscConnection.open(this.host, this.port);
+        try {
+            this.connectionState = 'connecting';
+            this.emit('connecting');
 
-        this.connectionState = 'connecting';
-        this.emit('connecting');
+            this.socket = EosOscStream.connect(this.host, this.port);
+        } catch (err) {
+            this.connectionState = 'disconnected';
+            this.emit('disconnected');
 
-        this.oscConnection.once('ready', () => {
+            return;
+        }
+
+        this.socket.once('ready', () => {
             console.log('Connected');
 
             this.connectionState = 'connected';
             this.emit('connected');
 
-            this.oscConnection.send({
+            this.socket?.writeOsc({
                 address: '/eos/user',
                 args: [0],
             });
 
-            this.oscConnection.send({
+            this.socket?.writeOsc({
                 address: '/eos/get/version',
                 args: [],
             });
 
-            this.oscConnection.send({
+            this.socket?.writeOsc({
                 address: '/eos/get/cue/1/count',
                 args: [],
             });
 
-            this.oscConnection.send({
+            this.socket?.writeOsc({
                 address: '/eos/subscribe',
                 args: [1],
             });
         });
 
-        this.oscConnection.once('close', () => {
+        this.socket.once('close', () => {
             console.log('EOS connection closed');
 
             this.connectionState = 'disconnected';
             this.emit('disconnected');
 
-            this.oscConnection.removeAllListeners();
+            this.socket?.removeAllListeners();
         });
 
-        this.oscConnection.on('error', this.handleOscError.bind(this));
-        this.oscConnection.on('message', this.handleOscMessage.bind(this));
+        this.socket.on('error', this.handleOscError.bind(this));
+        this.socket.on('data', this.handleOscMessage.bind(this));
     }
 
     disconnect() {
         console.log('Disconnecting from EOS console');
 
-        this.oscConnection.close();
+        this.socket?.destroy();
     }
 
     executeCommand(
@@ -99,21 +104,21 @@ export class EosConsole extends EventEmitter {
         substitutions: string[],
         newCommand = true,
     ) {
-        const msg: Message = {
+        const msg: EosOscMessage = {
             address: newCommand ? '/eos/newcmd' : '/eos/cmd',
             args: [command, ...substitutions],
         };
 
-        this.oscConnection.send(msg);
+        this.socket?.writeOsc(msg);
     }
 
     fireCue(cueListNumber: number, cueNumber: string) {
-        const msg: Message = {
+        const msg: EosOscMessage = {
             address: `/eos/cue/${cueListNumber}/${cueNumber}/fire`,
             args: [],
         };
 
-        this.oscConnection.send(msg);
+        this.socket?.writeOsc(msg);
     }
 
     getCues(): Cue[] {
@@ -188,7 +193,7 @@ export class EosConsole extends EventEmitter {
         }
     }
 
-    private handleOscMessage(msg: Message) {
+    private handleOscMessage(msg: EosOscMessage) {
         console.debug('OSC message:', msg);
 
         if (msg.address === '/eos/out/get/version') {
@@ -222,7 +227,7 @@ export class EosConsole extends EventEmitter {
             this.cuesLeftToSync = msg.args[0];
 
             for (let i = 0; i < this.cuesLeftToSync; i++) {
-                this.oscConnection.send({
+                this.socket?.writeOsc({
                     address: `/eos/get/cue/1/index/${i}`,
                     args: [],
                 });
@@ -241,12 +246,12 @@ export class EosConsole extends EventEmitter {
             );
 
             for (const cueNumber of changedTargets) {
-                const getCueMsg: Message = {
+                const getCueMsg: EosOscMessage = {
                     address: `/eos/get/cue/1/${cueNumber}`,
                     args: [],
                 };
 
-                this.oscConnection.send(getCueMsg);
+                this.socket?.writeOsc(getCueMsg);
             }
         }
 
@@ -259,7 +264,7 @@ export class EosConsole extends EventEmitter {
         console.error('OSC connection error:', err);
     }
 
-    private handleCueMessage(msg: Message) {
+    private handleCueMessage(msg: EosOscMessage) {
         // Address: /eos/out/get/cue/<cue list number>/<cue number>/<cue part number>/list/<list index>/<list count>
         //
         // Arguments:
@@ -418,7 +423,7 @@ export class EosConsole extends EventEmitter {
  *   - "1.23" => "1.23"
  *   - "3-5" => [3, 4, 5]
  */
-function expandTargetNumberArguments(args: Argument[]): string[] {
+function expandTargetNumberArguments(args: any[]): string[] {
     const expandedArgs = args.flatMap((arg) => {
         switch (typeof arg) {
             case 'number':
