@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useHotkeys } from 'react-hotkeys-hook';
 import NoteInput, { NoteInputHandle } from './components/NoteInput';
 import PlaybackStatusDisplay from './components/PlaybackStatusDisplay';
 import QuickNoteButtonGrid from './components/QuickNoteButtonGrid';
@@ -29,6 +30,17 @@ function App() {
 
     const refConsoleConnection = useRef<ConsoleConnectionHandle>(null);
     const refNoteInput = useRef<NoteInputHandle>(null);
+
+    const isMac = navigator.platform.includes('Mac');
+    const modifierKey = isMac ? 'meta' : 'ctrl';
+    // Map Ctrl+D / Cmd+D to clear the current cue's note
+    useHotkeys(`${modifierKey}+d`, () => applyNoteToCurrentCue(''), {
+        enableOnFormTags: true,
+    });
+    // Map Ctrl+E / Cmd+E to focus the edit textarea
+    useHotkeys(`${modifierKey}+e`, () => refNoteInput.current?.focus(), {
+        enableOnFormTags: true,
+    });
 
     const onEditNoteTextEdited = (text: string) => {
         if (!editingCueNumber) {
