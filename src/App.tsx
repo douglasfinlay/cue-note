@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ConnectionState, Cue } from './models/eos';
 import { RemoveEventListenerFunc } from './preload';
-import ConsoleConnectionCard from './components/ConsoleConnectionCard';
+import ConsoleConnectionCard from './components/connect/ConsoleConnectionCard';
 import Toolbar from './components/Toolbar';
 import CueNoteMain from './components/CueNoteMain';
 
@@ -131,7 +131,7 @@ function App() {
     };
 
     return (
-        <div className='select-none text-white bg-black'>
+        <div className='select-none text-white bg-stone-900'>
             {connectionState === 'connected' &&
             initialSyncProgress === undefined ? (
                 <div className='flex flex-col h-screen min-h-screen '>

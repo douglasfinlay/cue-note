@@ -52,7 +52,7 @@ const NoteInput = forwardRef<NoteInputHandle, NoteInputProps>((props, ref) => {
     return (
         <textarea
             ref={refTextArea}
-            className='h-full w-full px-3 py-2 text-2xl align-top rounded bg-black border border-solid border-eos-yellow resize-none disabled:opacity-50'
+            className='h-full w-full px-3 py-2 text-xl align-top rounded resize-none disabled:opacity:50 bg-gray-700 placeholder-gray-400 text-white'
             disabled={props.disabled}
             placeholder='Type your note followed by enter...'
             value={text}

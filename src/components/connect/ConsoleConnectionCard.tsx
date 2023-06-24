@@ -1,4 +1,4 @@
-import { ConnectionState } from '../models/eos';
+import { ConnectionState } from '../../models/eos';
 import ConsoleConnectionForm from './ConsoleConnectionForm';
 import ConsoleSyncProgress from './ConsoleSyncProgress';
 
@@ -12,8 +12,8 @@ interface ConsoleConnectionCardProps {
 
 const ConsoleConnectionCard = (props: ConsoleConnectionCardProps) => {
     return (
-        <div className='flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0'>
-            <div className='w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700'>
+        <div className='flex flex-col items-center justify-center mx-auto md:h-screen w-96'>
+            <div className='w-full rounded-lg md:mt-0 sm:max-w-md xl:p-0'>
                 {props.initialSyncProgress === undefined ? (
                     <ConsoleConnectionForm
                         connectionState={props.connectionState}

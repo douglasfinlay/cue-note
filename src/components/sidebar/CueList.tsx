@@ -82,7 +82,10 @@ function CueList({
     ));
 
     return (
-        <div className='max-h-full overflow-y-scroll scrollbar-hidden' ref={containerRef}>
+        <div
+            className='max-h-full min-w-full max-w-full overflow-y-scroll scrollbar-hidden'
+            ref={containerRef}
+        >
             {cueComponents}
         </div>
     );

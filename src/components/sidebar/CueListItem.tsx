@@ -18,14 +18,14 @@ function CueListItem({
     onTriggerEdit,
     onTriggerGoTo,
 }: CueProps) {
-    const sceneMarkerStyle = 'flex justify-center items-center space-evenly text-xs font-bold';
+    const sceneMarkerStyle =
+        'flex justify-center items-center space-evenly text-xs font-bold';
 
-    const sceneMarkerLineStyle = 'h-1.5 bg-eos-scene-marker my-2 grow';
+    const sceneMarkerLineStyle = 'h-1.5 bg-gray-400 my-2 grow';
 
-    const itemStyle = cx(
-        'mb-2 rounded',
-        { 'bg-eos-grey-dark': !!cue.notes }
-    );
+    const itemStyle = cx('mb-2 rounded max-w-full', {
+        'bg-eos-grey-dark': !!cue.notes,
+    });
 
     const cueLabelStyle = cx(
         'self-center pl-3 text-ellipsis overflow-hidden whitespace-nowrap grow',
@@ -47,7 +47,9 @@ function CueListItem({
             {cue.scene && (
                 <div className={sceneMarkerStyle}>
                     <div className={sceneMarkerLineStyle}></div>
-                    <div className='bg-black px-2 overflow-x-hidden whitespace-nowrap text-ellipsis'>{cue.scene}</div>
+                    <div className='px-2 overflow-x-hidden whitespace-nowrap text-ellipsis'>
+                        {cue.scene}
+                    </div>
                     <div className={sceneMarkerLineStyle}></div>
                 </div>
             )}
@@ -106,7 +108,9 @@ function CueListItem({
                     </div>
                 </div>
 
-                {cue.notes && <div className='py-1 px-2'>{cue.notes}</div>}
+                {cue.notes && (
+                    <div className='py-1 px-2 break-all'>{cue.notes}</div>
+                )}
             </div>
 
             {cue.isSceneEnd && <div className={sceneMarkerLineStyle}></div>}

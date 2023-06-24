@@ -172,21 +172,19 @@ const CueNoteMain = (props: CueNoteMainProps) => {
                     </div>
                 </div>
             </div>
-            <div className='basis-1/3 grow-0 shrink-0 flex gap-2 flex-col'>
-                <div className='grow overflow-y-hidden relative'>
-                    <CueList
-                        cues={props.cues}
-                        activeCueNumber={props.activeCue?.cueNumber}
-                        editingCueNumber={editingCueNumber}
-                        focusCueNumber={
-                            editingCueNumber || props.activeCue?.cueNumber
-                        }
-                        onTriggerClearCue={(cueNumber) =>
-                            applyNoteToCue(cueNumber, '')
-                        }
-                        onTriggerEditCue={editCue}
-                    />
-                </div>
+            <div className='basis-1/3 grow-0 shrink-0 flex gap-2 relative'>
+                <CueList
+                    cues={props.cues}
+                    activeCueNumber={props.activeCue?.cueNumber}
+                    editingCueNumber={editingCueNumber}
+                    focusCueNumber={
+                        editingCueNumber || props.activeCue?.cueNumber
+                    }
+                    onTriggerClearCue={(cueNumber) =>
+                        applyNoteToCue(cueNumber, '')
+                    }
+                    onTriggerEditCue={editCue}
+                />
             </div>
         </div>
     );
