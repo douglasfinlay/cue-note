@@ -1,14 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
-import { useHotkeys } from 'react-hotkeys-hook';
-import NoteInput, { NoteInputHandle } from './components/NoteInput';
-import PlaybackStatusDisplay from './components/PlaybackStatusDisplay';
-import QuickNoteButtonGrid from './components/QuickNoteButtonGrid';
-import ConsoleConnection, {
-    ConsoleConnectionHandle,
-} from './components/sidebar/ConsoleConnection';
-import CueList from './components/sidebar/CueList';
+import { useEffect, useState } from 'react';
 import { ConnectionState, Cue } from './models/eos';
 import { RemoveEventListenerFunc } from './preload';
+import ConsoleConnectionCard from './components/ConsoleConnectionCard';
+import Toolbar from './components/Toolbar';
+import CueNoteMain from './components/CueNoteMain';
 
 function App() {
     const [consoleAddress, setConsoleAddress] = useState('');
@@ -18,69 +13,8 @@ function App() {
         number | undefined
     >();
     const [cues, setCues] = useState<Cue[]>([]);
-    const [readyToNote, setReadyToNote] = useState(false);
     const [activeCue, setActiveCue] = useState<Cue | null>(null);
     const [activeCueNumber, setActiveCueNumber] = useState<string | null>(null);
-    const [editingCue, setEditingCue] = useState<Cue | null>(null);
-    const [editingCueNumber, setEditingCueNumber] = useState<string | null>(
-        null,
-    );
-    const [editNoteText, setEditNoteText] = useState('');
-    const [quickNotes, setQuickNotes] = useState<string[]>([]);
-
-    const refConsoleConnection = useRef<ConsoleConnectionHandle>(null);
-    const refNoteInput = useRef<NoteInputHandle>(null);
-
-    const isMac = navigator.platform.includes('Mac');
-    const modifierKey = isMac ? 'meta' : 'ctrl';
-    // Map Ctrl+D / Cmd+D to clear the current cue's note
-    useHotkeys(`${modifierKey}+d`, () => applyNoteToCurrentCue(''), {
-        enableOnFormTags: true,
-    });
-    // Map Ctrl+E / Cmd+E to focus the edit textarea
-    useHotkeys(`${modifierKey}+e`, () => refNoteInput.current?.focus(), {
-        enableOnFormTags: true,
-    });
-
-    const onEditNoteTextEdited = (text: string) => {
-        if (!editingCueNumber) {
-            setEditingCueNumber(activeCueNumber);
-        }
-
-        setEditNoteText(text);
-    };
-
-    const applyNoteToCue = (cueNumber: string, note: string) => {
-        window.api.updateCueNotes('1', cueNumber, note.trimEnd());
-        discardNote();
-    };
-
-    const applyNoteToCurrentCue = (note: string) => {
-        const targetCueNumber = editingCueNumber || activeCueNumber;
-
-        if (targetCueNumber) {
-            applyNoteToCue(targetCueNumber, note);
-        }
-    };
-
-    const saveNote = () => {
-        applyNoteToCurrentCue(editNoteText);
-    };
-
-    const discardNote = () => {
-        setEditingCueNumber(null);
-        setEditNoteText('');
-    };
-
-    const editCue = (cueNumber: string) => {
-        discardNote();
-        setEditingCueNumber(cueNumber);
-
-        const cue = cues.find((cue) => cue.cueNumber === cueNumber);
-        setEditNoteText(cue?.notes ?? '');
-
-        refNoteInput.current?.focus();
-    };
 
     const onInitialSyncComplete = async () => {
         const cues = await window.api.getCues();
@@ -130,16 +64,7 @@ function App() {
         setCues([]);
         setActiveCue(null);
         setActiveCueNumber(null);
-        setEditingCue(null);
-        setEditingCueNumber(null);
-        discardNote();
     };
-
-    useEffect(() => {
-        if (readyToNote) {
-            refNoteInput.current?.focus();
-        }
-    }, [readyToNote]);
 
     useEffect(() => {
         if (activeCueNumber) {
@@ -151,38 +76,12 @@ function App() {
     }, [cues, activeCueNumber]);
 
     useEffect(() => {
-        if (!editingCueNumber) {
-            setEditingCue(null);
-            return;
-        }
-
-        const editingCue = cues.find(
-            (cue) => cue.cueNumber === editingCueNumber,
-        );
-        setEditingCue(editingCue ?? null);
-    }, [cues, editingCueNumber]);
-
-    const onKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-            discardNote();
-        }
-    };
-
-    useEffect(() => {
         if (connectionState === 'disconnected') {
             clearState();
-            refConsoleConnection.current?.focus();
         } else if (connectionState === 'connected') {
             updateInitialSyncProgress();
         }
     }, [connectionState]);
-
-    useEffect(() => {
-        const ready =
-            connectionState === 'connected' && (!!editingCue || !!activeCue);
-
-        setReadyToNote(ready);
-    }, [connectionState, activeCue, editingCue]);
 
     useEffect(() => {
         const eventListeners: RemoveEventListenerFunc[] = [];
@@ -198,12 +97,7 @@ function App() {
         eventListeners.push(window.api.onCueDeleted(onCueDeleted));
         eventListeners.push(window.api.onCueUpdated(onCueUpdated));
 
-        document.addEventListener('keydown', onKeyDown, false);
-
         (async () => {
-            const quickNotes = await window.api.getQuickNotes();
-            setQuickNotes(quickNotes);
-
             const host = await window.api.getHost();
             setConsoleAddress(host);
 
@@ -223,14 +117,10 @@ function App() {
             }
         })();
 
-        refConsoleConnection.current?.focus();
-
         return () => {
             for (const removeListener of eventListeners) {
                 removeListener();
             }
-
-            document.removeEventListener('keydown', onKeyDown, false);
         };
     }, []);
 
@@ -245,85 +135,29 @@ function App() {
     };
 
     return (
-        <div className='flex gap-3 w-screen min-w-screen h-screen min-h-screen p-2 select-none text-white bg-black'>
-            <div className='basis-2/3 flex gap-3 flex-col min-w-0'>
-                <div className='grow'>
-                    <QuickNoteButtonGrid
-                        disabled={!readyToNote}
-                        quickNotes={quickNotes}
-                        onNoteTriggered={(note) => applyNoteToCurrentCue(note)}
-                    />
-                </div>
-                <div className='grow-0 shrink-0'>
-                    <PlaybackStatusDisplay
-                        active={editingCue || activeCue}
-                        disabled={!readyToNote}
-                        editing={!!editingCue}
-                    />
-                </div>
-                <div className='flex basis-28 grow-0 shrink-0 gap-2'>
-                    <NoteInput
-                        ref={refNoteInput}
-                        disabled={!readyToNote}
-                        value={editNoteText}
-                        onEnterPressed={saveNote}
-                        onTextChanged={onEditNoteTextEdited}
-                    />
-                    <div className='flex flex-col gap-2'>
-                        <button
-                            className='grow-0 shrink-0 px-3 w-24 h-12 rounded bg-eos-grey-dark border-2 border-solid border-eos-grey-light disabled:opacity-50'
-                            disabled={!readyToNote || !editingCue}
-                            onClick={discardNote}
-                        >
-                            <div className='leading-5'>Cancel</div>
-                            <div className='text-xs'>(Esc)</div>
-                        </button>
-                        <button
-                            className='grow rounded px-3 w-24 h-12 bg-eos-grey-dark border-2 border-solid border-eos-grey-light disabled:opacity-50'
-                            disabled={!readyToNote || !editingCue}
-                            onClick={saveNote}
-                        >
-                            <svg
-                                xmlns='http://www.w3.org/2000/svg'
-                                width='24'
-                                height='24'
-                                fill='currentColor'
-                                className='bi bi-arrow-return-left inline-block'
-                                viewBox='0 0 16 16'
-                            >
-                                <path
-                                    fillRule='evenodd'
-                                    d='M14.5 1.5a.5.5 0 0 1 .5.5v4.8a2.5 2.5 0 0 1-2.5 2.5H2.707l3.347 3.346a.5.5 0 0 1-.708.708l-4.2-4.2a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 8.3H12.5A1.5 1.5 0 0 0 14 6.8V2a.5.5 0 0 1 .5-.5z'
-                                />
-                            </svg>
-                        </button>
+        <div className='select-none text-white bg-black'>
+            {connectionState === 'connected' &&
+            initialSyncProgress === undefined ? (
+                <div className='flex flex-col h-screen min-h-screen '>
+                    <div className='flex-grow-0'>
+                        <Toolbar
+                            onTriggerDisconnect={window.api.disconnectConsole}
+                        />
+                    </div>
+
+                    <div className='p-2 flex-grow h-full max-h-full overflow-hidden'>
+                        <CueNoteMain activeCue={activeCue} cues={cues} />
                     </div>
                 </div>
-            </div>
-            <div className='basis-1/3 grow-0 shrink-0 flex gap-2 flex-col'>
-                <div className='grow overflow-y-hidden relative'>
-                    <CueList
-                        cues={cues}
-                        activeCueNumber={activeCueNumber}
-                        editingCueNumber={editingCueNumber}
-                        focusCueNumber={editingCueNumber || activeCueNumber}
-                        onTriggerClearCue={(cueNumber) =>
-                            applyNoteToCue(cueNumber, '')
-                        }
-                        onTriggerEditCue={editCue}
-                    />
-                </div>
-                <div className='grow-0 shrink-0'>
-                    <ConsoleConnection
-                        ref={refConsoleConnection}
-                        address={consoleAddress}
-                        connectionState={connectionState}
-                        syncProgress={initialSyncProgress}
-                        onTriggerConnect={window.api.connectConsole}
-                        onTriggerDisconnect={window.api.disconnectConsole}
-                    />
-                </div>
-            </div>
+            ) : (
+                <ConsoleConnectionCard
+                    address={consoleAddress}
+                    connectionState={connectionState}
+                    initialSyncProgress={initialSyncProgress}
+                    onTriggerConnect={window.api.connectConsole}
+                    onTriggerDisconnect={window.api.disconnectConsole}
+                />
+            )}
         </div>
     );
 }
