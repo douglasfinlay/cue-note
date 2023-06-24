@@ -1,5 +1,6 @@
 import { KeyboardEvent, useEffect, useState } from 'react';
 import { ConnectionState } from '../models/eos';
+import useLocalStorage from '../hooks/use-local-storage';
 
 const HOSTNAME =
     /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9-]*[A-Za-z0-9])$/;
@@ -8,13 +9,12 @@ const IPV4_ADDRESS =
 const IPV6_ADDRESS = /^(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}$/;
 
 interface ConsoleConnectionProps {
-    address?: string;
     connectionState: ConnectionState;
     onTriggerConnect: (address: string) => void;
 }
 
 const ConsoleConnectionForm = (props: ConsoleConnectionProps) => {
-    const [host, setHost] = useState('');
+    const [host, setHost] = useLocalStorage('host', '');
     const [isHostValid, setIsHostValid] = useState(false);
 
     const validate = () => {
@@ -32,10 +32,6 @@ const ConsoleConnectionForm = (props: ConsoleConnectionProps) => {
             props.onTriggerConnect(host);
         }
     };
-
-    useEffect(() => {
-        setHost(props.address ?? '');
-    }, [props.address]);
 
     useEffect(() => validate(), [host]);
 

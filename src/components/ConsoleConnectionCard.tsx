@@ -3,7 +3,6 @@ import ConsoleConnectionForm from './ConsoleConnectionForm';
 import ConsoleSyncProgress from './ConsoleSyncProgress';
 
 interface ConsoleConnectionCardProps {
-    address?: string;
     connectionState: ConnectionState;
     initialSyncProgress?: number;
 
@@ -17,7 +16,6 @@ const ConsoleConnectionCard = (props: ConsoleConnectionCardProps) => {
             <div className='w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700'>
                 {props.initialSyncProgress === undefined ? (
                     <ConsoleConnectionForm
-                        address={props.address}
                         connectionState={props.connectionState}
                         onTriggerConnect={window.api.connectConsole}
                     />

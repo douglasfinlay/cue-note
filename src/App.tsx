@@ -6,7 +6,6 @@ import Toolbar from './components/Toolbar';
 import CueNoteMain from './components/CueNoteMain';
 
 function App() {
-    const [consoleAddress, setConsoleAddress] = useState('');
     const [connectionState, setConnectionState] =
         useState<ConnectionState>('disconnected');
     const [initialSyncProgress, setInitialSyncProgress] = useState<
@@ -98,9 +97,6 @@ function App() {
         eventListeners.push(window.api.onCueUpdated(onCueUpdated));
 
         (async () => {
-            const host = await window.api.getHost();
-            setConsoleAddress(host);
-
             const connectionState = await window.api.getConnectionState();
             setConnectionState(connectionState);
 
@@ -151,7 +147,6 @@ function App() {
                 </div>
             ) : (
                 <ConsoleConnectionCard
-                    address={consoleAddress}
                     connectionState={connectionState}
                     initialSyncProgress={initialSyncProgress}
                     onTriggerConnect={window.api.connectConsole}
