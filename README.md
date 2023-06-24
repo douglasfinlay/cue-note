@@ -52,24 +52,15 @@ Connect to an Eos console via IP address or hostname. Please ensure _Third Party
 
 ### Quick Note Buttons
 
-The notes applied by the quick note buttons are configured using a file. Each line corresponds to one of the 8 buttons.
-
-#### Windows
-
-```
-%APPDATA%\Cue Note\quick-notes
-```
-
-#### macOS
-
-```
-~/Library/Application Support/Cue Note/quick-notes
-```
+Right-click on a quick note button to change its text. This will automatically
+be saved to your local machine without modifying the Eos show file.
 
 ## Roadmap
 
-- [ ] Quick note in-place edit
-- [ ] Quick note keyboard shortcuts
+- [x] Quick note in-place edit
+- [x] Quick note keyboard shortcuts
+- [ ] Styling overhaul
+- [ ] Add screenshots to this readme
 - [ ] Button to filter cue list to noted cues only
 - [ ] Auto-reconnect after connection loss
 
