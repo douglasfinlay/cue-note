@@ -1,22 +1,9 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
-import { mkdir, readFile, writeFile } from 'fs/promises';
-import { dirname, join } from 'path';
 import { EosConsole } from './main/eos-console';
 import { Cue } from './models/eos';
 
 let mainWindow: BrowserWindow | null;
 let eos: EosConsole | null;
-
-let quickNotes: string[] = [
-    'Quick note #1',
-    'Quick note #2',
-    'Quick note #3',
-    'Quick note #4',
-    'Quick note #5',
-    'Quick note #6',
-    'Quick note #7',
-    'Quick note #8',
-];
 
 const INITIAL_WINDOW_TITLE = 'CueNote';
 
@@ -50,39 +37,7 @@ const createWindow = (): void => {
     mainWindow.webContents.openDevTools();
 };
 
-const createDefaultQuickNotesConfig = async (filePath: string) => {
-    try {
-        await mkdir(dirname(filePath), { recursive: true });
-
-        const data = quickNotes.join('\n');
-        await writeFile(filePath, data);
-    } catch (err: any) {
-        console.error(
-            'Failed to write default quick notes config:',
-            err.message,
-        );
-        console.error(err.stack);
-    }
-};
-
-const loadQuickNotes = async (filePath: string) => {
-    try {
-        const file = await readFile(filePath, { encoding: 'utf-8' });
-        quickNotes = file.split('\n');
-    } catch (err: any) {
-        if (err.code === 'ENOENT') {
-            await createDefaultQuickNotesConfig(filePath);
-            return;
-        }
-
-        console.error('Failed to initialise quick notes config');
-    }
-};
-
 app.on('ready', async () => {
-    const quickNotesPath = join(app.getPath('userData'), 'quick-notes');
-    await loadQuickNotes(quickNotesPath);
-
     createWindow();
 });
 
@@ -207,5 +162,3 @@ ipcMain.on(
         eos?.executeCommand(command, [cueListNumber, cueNumber, notes]);
     },
 );
-
-ipcMain.handle('get-quick-notes', () => quickNotes);

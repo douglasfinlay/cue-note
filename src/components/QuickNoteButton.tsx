@@ -38,10 +38,6 @@ function QuickNoteButton({
 
     const [isEditing, setEditing] = useState(false);
 
-    useEffect(() => {
-        console.log(isEditing ? 'Editing' : 'Not editing');
-    }, [isEditing]);
-
     const onButtonBlur = (e: FocusEvent<HTMLButtonElement>) => {
         const currentTarget = e.currentTarget;
 

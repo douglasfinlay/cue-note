@@ -20,8 +20,6 @@ export type ContextBridgeApi = {
 
     getPendingCue: () => Promise<Cue | null>;
 
-    getQuickNotes: () => Promise<string[]>;
-
     goToCue: (cueNumber: string) => void;
 
     isInitialSyncComplete: () => Promise<boolean>;
@@ -75,8 +73,6 @@ const exposedApi: ContextBridgeApi = {
         ipcRenderer.invoke('console:get-initial-sync-progress'),
 
     getPendingCue: async () => ipcRenderer.invoke('console:get-pending-cue'),
-
-    getQuickNotes: async () => ipcRenderer.invoke('get-quick-notes'),
 
     goToCue: (cueNumber) => ipcRenderer.send('console:go-to-cue', cueNumber),
 

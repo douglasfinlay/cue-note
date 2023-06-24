@@ -1,28 +1,21 @@
 import QuickNoteButton from './QuickNoteButton';
+import useLocalStorage from '../hooks/use-local-storage';
 
 interface QuickNotesProps {
     buttonCount?: number;
     disabled?: boolean;
-    quickNotes: string[];
     onNoteTriggered: (note: string) => void;
 }
 
 function QuickNoteButtonGrid({
     buttonCount = 8,
     disabled = false,
-    quickNotes,
     onNoteTriggered,
 }: QuickNotesProps) {
-    if (quickNotes.length < 8) {
-        for (let i = 0; i < buttonCount - quickNotes.length; i++) {
-            quickNotes.push('');
-        }
-    } else if (quickNotes.length > 8) {
-        console.warn(
-            'Too many notes passed to QuickNoteButtonGrid, extras will be ignored',
-        );
-        quickNotes = quickNotes.slice(0, 8);
-    }
+    const [quickNotes, setQuickNotes] = useLocalStorage(
+        'quickNotes',
+        Array(buttonCount).fill(''),
+    );
 
     const triggerNote = (index: number) => {
         const quickNote = quickNotes[index];
@@ -32,6 +25,14 @@ function QuickNoteButtonGrid({
         }
     };
 
+    const onNoteEdited = (index: number, newNote: string) => {
+        setQuickNotes([
+            ...quickNotes.slice(0, index),
+            newNote,
+            ...quickNotes.slice(index + 1),
+        ]);
+    };
+
     const buttons = quickNotes.map((note, index) => (
         <QuickNoteButton
             key={index}
@@ -39,6 +40,7 @@ function QuickNoteButtonGrid({
             hotkeyIndex={index + 1}
             text={note}
             onTriggered={() => triggerNote(index)}
+            onTextEdited={(newText) => onNoteEdited(index, newText)}
         />
     ));
 

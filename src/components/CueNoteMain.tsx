@@ -13,7 +13,6 @@ interface CueNoteMainProps {
 
 const CueNoteMain = (props: CueNoteMainProps) => {
     const [editNoteText, setEditNoteText] = useState('');
-    const [quickNotes, setQuickNotes] = useState<string[]>([]);
     const [readyToNote, setReadyToNote] = useState(false);
     const [editingCue, setEditingCue] = useState<Cue | null>(null);
     const [editingCueNumber, setEditingCueNumber] = useState<string | null>(
@@ -80,11 +79,6 @@ const CueNoteMain = (props: CueNoteMainProps) => {
     };
 
     useEffect(() => {
-        (async () => {
-            const quickNotes = await window.api.getQuickNotes();
-            setQuickNotes(quickNotes);
-        })();
-
         document.addEventListener('keydown', onKeyDown, false);
 
         return () => {
@@ -122,7 +116,6 @@ const CueNoteMain = (props: CueNoteMainProps) => {
                 <div className='grow'>
                     <QuickNoteButtonGrid
                         disabled={!readyToNote}
-                        quickNotes={quickNotes}
                         onNoteTriggered={(note) => applyNoteToCurrentCue(note)}
                     />
                 </div>
