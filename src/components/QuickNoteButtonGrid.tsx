@@ -44,7 +44,7 @@ function QuickNoteButtonGrid({
         />
     ));
 
-    return <div className='grid h-full gap-4 grid-cols-2'>{buttons}</div>;
+    return <div className='h-full grid gap-4 grid-cols-2 grid-rows-4'>{buttons}</div>;
 }
 
 export default QuickNoteButtonGrid;

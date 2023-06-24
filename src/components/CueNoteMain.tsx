@@ -111,7 +111,7 @@ const CueNoteMain = (props: CueNoteMainProps) => {
     }, [props.activeCue, editingCue]);
 
     return (
-        <div className='flex h-full max-h-full'>
+        <div className='flex h-full max-h-full gap-2'>
             <div className='basis-2/3 flex gap-3 flex-col min-w-0'>
                 <div className='grow'>
                     <QuickNoteButtonGrid
