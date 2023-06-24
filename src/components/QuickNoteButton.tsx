@@ -1,32 +1,111 @@
+import {
+    ChangeEvent,
+    KeyboardEvent,
+    FocusEvent,
+    useEffect,
+    useState,
+} from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 
 interface QuickNoteButtonProps {
     disabled?: boolean;
     hotkeyIndex?: number;
-    text: string;
+    onTextEdited?: (newText: string) => void;
     onTriggered: () => void;
+    text: string;
 }
 
 function QuickNoteButton({
     disabled = false,
     hotkeyIndex,
+    onTextEdited,
     onTriggered,
-    text,
+    text: initialText,
 }: QuickNoteButtonProps) {
     const isMac = navigator.platform.includes('Mac');
     const modifierKey = isMac ? 'meta' : 'ctrl';
 
-    useHotkeys(`${modifierKey}+${hotkeyIndex}`, onTriggered, {
-        enabled: !disabled,
+    const trigger = () => {
+        if (!disabled && !isEditing) {
+            onTriggered();
+        }
+    };
+
+    useHotkeys(`${modifierKey}+${hotkeyIndex}`, trigger, {
         enableOnFormTags: true,
         preventDefault: true,
     });
+
+    const [isEditing, setEditing] = useState(false);
+
+    useEffect(() => {
+        console.log(isEditing ? 'Editing' : 'Not editing');
+    }, [isEditing]);
+
+    const onButtonBlur = (e: FocusEvent<HTMLButtonElement>) => {
+        const currentTarget = e.currentTarget;
+
+        requestAnimationFrame(() => {
+            if (!currentTarget.contains(document.activeElement)) {
+                setEditing(false);
+            }
+        });
+    };
+
+    const [text, setText] = useState(initialText);
+
+    const finishEditing = (newText: string) => {
+        if (newText !== oldText) {
+            onTextEdited?.(newText);
+        }
+
+        setEditing(false);
+    };
+
+    const [oldText, setOldText] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (isEditing) {
+            setOldText(text);
+        }
+    }, [isEditing]);
+
+    useEffect(() => {
+        setText(initialText);
+    }, [initialText]);
+
+    const onInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setText(e.target.value);
+    };
+
+    const onInputFocus = (e: FocusEvent<HTMLInputElement>) => {
+        e.target.select();
+    };
+
+    const onInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+
+            if (isEditing) {
+                finishEditing(e.currentTarget.value);
+            }
+        }
+    };
+
+    const onButtonContextMenu = () => {
+        // Only enter edit mode if there is an `onTextEdited` callback attached
+        if (onTextEdited) {
+            setEditing(true);
+        }
+    };
 
     return (
         <button
             className='relative rounded bg-eos-grey-dark disabled:opacity-50'
             disabled={disabled || !text.length}
-            onClick={onTriggered}
+            onClick={trigger}
+            onContextMenu={onButtonContextMenu}
+            onBlur={onButtonBlur}
             tabIndex={-1}
         >
             {hotkeyIndex !== undefined && (
@@ -46,7 +125,20 @@ function QuickNoteButton({
                     {hotkeyIndex}
                 </div>
             )}
-            {text}
+            {isEditing ? (
+                <input
+                    type='text'
+                    className='text-center rounded inline-block h-full w-full bg-red-800 placeholder-gray-400 text-white'
+                    placeholder='My quick note'
+                    value={text}
+                    onChange={onInputChange}
+                    onFocus={onInputFocus}
+                    onKeyDown={onInputKeyDown}
+                    autoFocus
+                />
+            ) : (
+                text
+            )}
         </button>
     );
 }
