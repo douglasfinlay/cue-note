@@ -1,3 +1,4 @@
+import cx from 'classnames';
 import {
     ChangeEvent,
     KeyboardEvent,
@@ -22,11 +23,14 @@ function QuickNoteButton({
     onTriggered,
     text: initialText,
 }: QuickNoteButtonProps) {
+    const [isAnimating, setAnimating] = useState(false);
+
     const isMac = navigator.platform.includes('Mac');
     const modifierKey = isMac ? 'meta' : 'ctrl';
 
     const trigger = () => {
-        if (!disabled && !isEditing) {
+        if (!disabled && !isEditing && text.length) {
+            setAnimating(true);
             onTriggered();
         }
     };
@@ -95,13 +99,22 @@ function QuickNoteButton({
         }
     };
 
+    const buttonClasses = cx(
+        'relative rounded bg-eos-grey-dark disabled:opacity-50',
+        {
+            'animate-quick-button-trigger': isAnimating,
+            'hover:bg-gray-700': !disabled && text.length,
+        },
+    );
+
     return (
         <button
-            className='relative rounded bg-eos-grey-dark disabled:opacity-50'
+            className={buttonClasses}
             disabled={disabled || !text.length}
             onClick={trigger}
             onContextMenu={onButtonContextMenu}
             onBlur={onButtonBlur}
+            onAnimationEnd={() => setAnimating(false)}
             tabIndex={-1}
         >
             {hotkeyIndex !== undefined && (
@@ -133,7 +146,13 @@ function QuickNoteButton({
                     autoFocus
                 />
             ) : (
-                <>{text || <span className='text-gray-500'>Right-click to set a note</span>}</>
+                <>
+                    {text || (
+                        <span className='text-gray-500'>
+                            Right-click to set note
+                        </span>
+                    )}
+                </>
             )}
         </button>
     );
