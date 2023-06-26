@@ -24,10 +24,10 @@ const ConsoleSyncProgress = (props: ConsoleSyncProgressProps) => {
     return (
         <div className='space-y-4 md:space-y-6 w-full'>
             <div className='space-y-4 md:space-y-6'>
-                <div className='text-center sm:text-sm rounded block w-full p-4 bg-gray-700 placeholder-gray-400 text-white relative'>
+                <div className='text-center sm:text-sm block w-full p-4 bg-gray-700 placeholder-gray-400 text-white relative'>
                     &nbsp;
                     <div
-                        className='absolute top-0 left-0 bg-gray-500 h-full rounded'
+                        className='absolute top-0 left-0 bg-gray-500 h-full'
                         style={{ width: `${syncProgress}%` }}
                     ></div>
                     <div className='absolute top-0 left-0 h-full w-full flex items-center justify-center'>
@@ -36,7 +36,7 @@ const ConsoleSyncProgress = (props: ConsoleSyncProgressProps) => {
                 </div>
 
                 <button
-                    className='w-full text-white bg-orange-800 hover:bg-orange-600 focus:ring-4 focus:outline-none font-medium rounded text-sm p-4 text-center disabled:opacity-50'
+                    className='w-full text-white bg-orange-800 hover:bg-orange-600 focus:ring-4 focus:outline-none font-medium text-sm p-4 text-center disabled:opacity-50'
                     onClick={() => props.onTriggerDisconnect()}
                 >
                     Cancel

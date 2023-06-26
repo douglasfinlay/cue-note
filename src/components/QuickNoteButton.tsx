@@ -100,7 +100,7 @@ function QuickNoteButton({
     };
 
     const buttonClasses = cx(
-        'relative rounded bg-eos-grey-dark disabled:opacity-50',
+        'relative bg-neutral-900 disabled:opacity-50',
         {
             'animate-quick-button-trigger': isAnimating,
             'hover:bg-gray-700': !disabled && text.length,
@@ -137,7 +137,7 @@ function QuickNoteButton({
             {isEditing ? (
                 <input
                     type='text'
-                    className='text-center rounded inline-block h-full w-full bg-red-800 placeholder-gray-400 text-white'
+                    className='text-center inline-block h-full w-full bg-red-800 placeholder-gray-400 text-white'
                     placeholder='My quick note'
                     value={text}
                     onChange={onInputChange}

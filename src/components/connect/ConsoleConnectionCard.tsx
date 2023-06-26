@@ -17,7 +17,7 @@ const ConsoleConnectionCard = (props: ConsoleConnectionCardProps) => {
 
     return (
         <div className='flex flex-col items-center justify-center mx-auto md:h-screen w-96'>
-            <div className='w-full rounded-lg md:mt-0 sm:max-w-md xl:p-0'>
+            <div className='w-full md:mt-0 sm:max-w-md xl:p-0'>
                 {showConnectionForm ? (
                     <ConsoleConnectionForm
                         connectionState={props.connectionState}

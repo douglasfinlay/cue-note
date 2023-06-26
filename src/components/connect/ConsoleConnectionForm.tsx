@@ -88,7 +88,7 @@ const ConsoleConnectionForm = (props: ConsoleConnectionProps) => {
                     <input
                         ref={hostInput}
                         type='text'
-                        className='text-center sm:text-sm rounded  block w-full p-4 bg-gray-700 placeholder-gray-400 text-white'
+                        className='text-center sm:text-sm block w-full p-4 bg-gray-700 placeholder-gray-400 text-white'
                         placeholder='Console IP'
                         disabled={props.connectionState !== 'disconnected'}
                         value={host}
@@ -98,7 +98,7 @@ const ConsoleConnectionForm = (props: ConsoleConnectionProps) => {
 
                 <button
                     type='submit'
-                    className='w-full text-white bg-orange-800 hover:bg-orange-600 focus:ring-4 focus:outline-none font-medium rounded text-sm p-4 text-center disabled:opacity-50'
+                    className='w-full text-white bg-orange-800 hover:bg-orange-600 focus:ring-4 focus:outline-none font-medium text-sm p-4 text-center disabled:opacity-50'
                     disabled={
                         !isHostValid || props.connectionState === 'connecting'
                     }
@@ -120,10 +120,10 @@ const ConsoleConnectionForm = (props: ConsoleConnectionProps) => {
             {errorMessage && (
                 <div className='text-center absolute w-full'>
                     <div
-                        className='p-2 items-center leading-none rounded flex justify-center'
+                        className='p-2 items-center leading-none flex justify-center'
                         role='alert'
                     >
-                        <span className='flex rounded border-2 border-red-500 text-red-500 uppercase px-2 py-1 text-xs font-bold mr-3'>
+                        <span className='flex border-2 border-red-500 text-red-500 uppercase px-2 py-1 text-xs font-bold mr-3'>
                             Error
                         </span>
                         <span className='text-red-500 font-semibold text-left'>

@@ -136,7 +136,7 @@ const CueNoteMain = (props: CueNoteMainProps) => {
                     />
                     <div className='flex flex-col gap-2'>
                         <button
-                            className='grow-0 shrink-0 px-3 w-24 h-12 rounded bg-eos-grey-dark border-2 border-solid border-eos-grey-light disabled:opacity-50'
+                            className='grow-0 shrink-0 px-3 w-24 h-12 bg-neutral-900 disabled:opacity-50'
                             disabled={!readyToNote || !editingCue}
                             onClick={discardNote}
                         >
@@ -144,7 +144,7 @@ const CueNoteMain = (props: CueNoteMainProps) => {
                             <div className='text-xs'>(Esc)</div>
                         </button>
                         <button
-                            className='grow rounded px-3 w-24 h-12 bg-eos-grey-dark border-2 border-solid border-eos-grey-light disabled:opacity-50'
+                            className='grow px-3 w-24 h-12 bg-neutral-900 disabled:opacity-50'
                             disabled={!readyToNote || !editingCue}
                             onClick={saveNote}
                         >
