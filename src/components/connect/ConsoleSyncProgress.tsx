@@ -23,15 +23,16 @@ const ConsoleSyncProgress = (props: ConsoleSyncProgressProps) => {
 
     return (
         <div className='space-y-4 md:space-y-6 w-full'>
-            <h1 className='text-center text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white'>
-                Syncing Cues...
-            </h1>
             <div className='space-y-4 md:space-y-6'>
-                <div className='w-full border border-eos-grey-light rounded h-2.5'>
+                <div className='text-center sm:text-sm rounded block w-full p-4 bg-gray-700 placeholder-gray-400 text-white relative'>
+                    &nbsp;
                     <div
-                        className='bg-eos-grey-light h-full rounded'
+                        className='absolute top-0 left-0 bg-gray-500 h-full rounded'
                         style={{ width: `${syncProgress}%` }}
                     ></div>
+                    <div className='absolute top-0 left-0 h-full w-full flex items-center justify-center'>
+                        Syncing cues{syncProgress !== null && ` (${syncProgress.toFixed(0)}%)`}...
+                    </div>
                 </div>
 
                 <button

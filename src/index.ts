@@ -76,11 +76,20 @@ ipcMain.on('console:connect', (_event, ...[address]) => {
         mainWindow?.webContents.send('console:connection-state', 'connecting');
     });
 
-    eos.on('connected', () => {
+    eos.on('connect', () => {
         mainWindow?.webContents.send('console:connection-state', 'connected');
     });
 
-    eos.on('disconnected', () => {
+    eos.on('connectError', (err: Error) => {
+        mainWindow?.webContents.send('console:connect-error', err.message);
+
+        mainWindow?.webContents.send(
+            'console:connection-state',
+            'disconnected',
+        );
+    });
+
+    eos.on('disconnect', () => {
         mainWindow?.webContents.send(
             'console:connection-state',
             'disconnected',
@@ -89,7 +98,7 @@ ipcMain.on('console:connect', (_event, ...[address]) => {
         mainWindow?.setTitle(INITIAL_WINDOW_TITLE);
     });
 
-    eos.on('initial-sync-complete', () => {
+    eos.on('initialSyncComplete', () => {
         mainWindow?.webContents.send('console:initial-sync-complete');
 
         const showName = eos?.getShowName();
@@ -98,23 +107,23 @@ ipcMain.on('console:connect', (_event, ...[address]) => {
         }
     });
 
-    eos.on('active-cue', (cueNumber: string) => {
+    eos.on('activeCue', (cueNumber: string | null) => {
         mainWindow?.webContents.send('console:active-cue', cueNumber);
     });
 
-    eos.on('pending-cue', (cueNumber: string) => {
+    eos.on('pendingCue', (cueNumber: string | null) => {
         mainWindow?.webContents.send('console:pending-cue', cueNumber);
     });
 
-    eos.on('cue:created', (cue: Cue) => {
+    eos.on('cueCreate', (cue: Cue) => {
         mainWindow?.webContents.send('console:cue:created', cue);
     });
 
-    eos.on('cue:deleted', (cue: Cue) => {
+    eos.on('cueDelete', (cue: Cue) => {
         mainWindow?.webContents.send('console:cue:deleted', cue.cueNumber);
     });
 
-    eos.on('cue:updated', (cue: Cue) => {
+    eos.on('cueUpdate', (cue: Cue) => {
         mainWindow?.webContents.send('console:cue:updated', cue);
     });
 

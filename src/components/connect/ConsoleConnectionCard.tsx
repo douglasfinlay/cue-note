@@ -11,10 +11,14 @@ interface ConsoleConnectionCardProps {
 }
 
 const ConsoleConnectionCard = (props: ConsoleConnectionCardProps) => {
+    const showConnectionForm =
+        props.connectionState === 'disconnected' ||
+        props.connectionState === 'connecting';
+
     return (
         <div className='flex flex-col items-center justify-center mx-auto md:h-screen w-96'>
             <div className='w-full rounded-lg md:mt-0 sm:max-w-md xl:p-0'>
-                {props.initialSyncProgress === undefined ? (
+                {showConnectionForm ? (
                     <ConsoleConnectionForm
                         connectionState={props.connectionState}
                         onTriggerConnect={window.api.connectConsole}

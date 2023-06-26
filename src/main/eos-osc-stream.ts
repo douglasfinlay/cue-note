@@ -55,6 +55,14 @@ export class EosOscStream extends Duplex {
         });
     }
 
+    _destroy(
+        error: Error | null,
+        callback: (error: Error | null) => void,
+    ): void {
+        this.socket.destroy(error ?? undefined);
+        callback(null);
+    }
+
     _write(
         chunk: any,
         encoding: BufferEncoding,

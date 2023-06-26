@@ -53,6 +53,10 @@ export type ContextBridgeApi = {
     onConsoleInitialSyncComplete: (
         callback: () => void,
     ) => RemoveEventListenerFunc;
+
+    onConnectError: (
+        callback: (reason: string) => void,
+    ) => RemoveEventListenerFunc;
 };
 
 const exposedApi: ContextBridgeApi = {
@@ -168,6 +172,19 @@ const exposedApi: ContextBridgeApi = {
 
         return () => {
             ipcRenderer.off('console:initial-sync-complete', subscription);
+        };
+    },
+
+    onConnectError: (callback) => {
+        const subscription = (
+            _event: IpcRendererEvent,
+            ...[reason]: [string]
+        ) => callback(reason);
+
+        ipcRenderer.on('console:connect-error', subscription);
+
+        return () => {
+            ipcRenderer.off('console:connect-error', subscription);
         };
     },
 };

@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { ConnectionState, Cue } from '../models/eos';
-import { EosOscStream, EosOscMessage } from './eos-osc-socket';
+import { EosOscStream, EosOscMessage } from './eos-osc-stream';
+import type TypedEmitter from 'typed-emitter';
 
 type RecordTargetUid = string;
 
@@ -15,7 +16,23 @@ const PENDING_CUE_OSC_ADDRESS =
 
 const CUE_CHANGED_OSC_ADDRESS = /^\/eos\/out\/notify\/cue\/1$/;
 
-export class EosConsole extends EventEmitter {
+type EosConsoleEvents = {
+    connect: () => void;
+    connectError: (err: Error) => void;
+    connecting: () => void;
+    disconnect: (reason?: string) => void;
+
+    initialSyncComplete: () => void;
+
+    activeCue: (cueNumber: string | null) => void;
+    pendingCue: (cueNumber: string | null) => void;
+
+    cueCreate: (cue: Cue) => void;
+    cueDelete: (cue: Cue) => void;
+    cueUpdate: (cue: Cue) => void;
+};
+
+export class EosConsole extends (EventEmitter as new () => TypedEmitter<EosConsoleEvents>) {
     private socket: EosOscStream | null = null;
     private connectionState: ConnectionState = 'disconnected';
     private initialSyncComplete = false;
@@ -35,26 +52,52 @@ export class EosConsole extends EventEmitter {
         super();
     }
 
-    connect() {
+    async connect(timeout = 5000) {
         console.log(`Connecting to EOS console at ${this.host}:${this.port}`);
 
-        try {
-            this.connectionState = 'connecting';
-            this.emit('connecting');
+        this.connectionState = 'connecting';
+        this.emit('connecting');
 
-            this.socket = EosOscStream.connect(this.host, this.port);
-        } catch (err) {
-            this.connectionState = 'disconnected';
-            this.emit('disconnected');
+        const timer = setTimeout(() => {
+            handleConnectTimeout();
+        }, timeout);
 
-            return;
-        }
+        const handleConnectError = (err: Error) => {
+            clearTimeout(timer);
+            this.socket?.off('ready', handleReady);
 
-        this.socket.once('ready', () => {
+            this.emit('connectError', err);
+        };
+
+        const handleConnectTimeout = () => {
+            this.socket?.destroy();
+            this.socket?.off('error', handleConnectError);
+            this.socket?.off('ready', handleReady);
+
+            this.emit('connectError', new Error('timed out'));
+        };
+
+        const handleReady = () => {
+            clearTimeout(timer);
+
+            this.socket?.off('error', handleConnectError);
+
+            this.socket?.once('close', () => {
+                console.log('EOS connection closed');
+
+                this.connectionState = 'disconnected';
+                this.emit('disconnect');
+
+                this.socket?.removeAllListeners();
+            });
+
+            this.socket?.on('error', this.handleOscError.bind(this));
+            this.socket?.on('data', this.handleOscMessage.bind(this));
+
             console.log('Connected');
 
             this.connectionState = 'connected';
-            this.emit('connected');
+            this.emit('connect');
 
             this.socket?.writeOsc({
                 address: '/eos/user',
@@ -75,19 +118,11 @@ export class EosConsole extends EventEmitter {
                 address: '/eos/subscribe',
                 args: [1],
             });
-        });
+        };
 
-        this.socket.once('close', () => {
-            console.log('EOS connection closed');
-
-            this.connectionState = 'disconnected';
-            this.emit('disconnected');
-
-            this.socket?.removeAllListeners();
-        });
-
-        this.socket.on('error', this.handleOscError.bind(this));
-        this.socket.on('data', this.handleOscMessage.bind(this));
+        this.socket = EosOscStream.connect(this.host, this.port);
+        this.socket.once('error', handleConnectError);
+        this.socket.once('ready', handleReady);
     }
 
     disconnect() {
@@ -184,7 +219,7 @@ export class EosConsole extends EventEmitter {
         this.initialSyncComplete = complete;
 
         if (complete) {
-            this.emit('initial-sync-complete');
+            this.emit('initialSyncComplete');
 
             console.log('Initial sync complete');
         }
@@ -233,10 +268,10 @@ export class EosConsole extends EventEmitter {
             this.handleCueMessage(msg);
         } else if (ACTIVE_CUE_OSC_ADDRESS.test(msg.address)) {
             this.activeCueNumber = msg.address.split('/')[6];
-            this.emit('active-cue', this.activeCueNumber);
+            this.emit('activeCue', this.activeCueNumber);
         } else if (PENDING_CUE_OSC_ADDRESS.test(msg.address)) {
             this.pendingCueNumber = msg.address.split('/')[6];
-            this.emit('pending-cue', this.pendingCueNumber);
+            this.emit('pendingCue', this.pendingCueNumber);
         } else if (CUE_CHANGED_OSC_ADDRESS.test(msg.address)) {
             const changedTargets = expandTargetNumberArguments(
                 msg.args.slice(1),
@@ -317,10 +352,10 @@ export class EosConsole extends EventEmitter {
             if (deletedCueUid) {
                 this.recordTargetUidByCueNumber.delete(cueNumber);
                 const deletedCue =
-                    this.cuesByRecordTargetUid.get(deletedCueUid);
+                    this.cuesByRecordTargetUid.get(deletedCueUid)!;
                 this.cuesByRecordTargetUid.delete(deletedCueUid);
 
-                this.emit('cue:deleted', deletedCue);
+                this.emit('cueDelete', deletedCue);
             }
 
             return;
@@ -367,7 +402,7 @@ export class EosConsole extends EventEmitter {
             return;
         }
 
-        this.emit(updating ? 'cue:updated' : 'cue:created', cue);
+        this.emit(updating ? 'cueUpdate' : 'cueCreate', cue);
     }
 }
 
