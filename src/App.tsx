@@ -134,10 +134,13 @@ function App() {
         }
     };
 
+    const isMac = navigator.platform.includes('Mac');
+
     return (
         <div className='flex flex-col h-screen min-h-screen select-none text-white overflow-hidden bg-stone-900'>
             <div className='basis-12 grow-0 shrink-0'>
                 <TitleBar
+                    buttonPosition={isMac ? 'right' : 'left'}
                     onTriggerDisconnect={
                         connectionState === 'connected' &&
                         initialSyncProgress === undefined
