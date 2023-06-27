@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ConnectionState, Cue } from './models/eos';
 import { RemoveEventListenerFunc } from './preload';
 import ConsoleConnectionCard from './components/connect/ConsoleConnectionCard';
-import Toolbar from './components/Toolbar';
+import TitleBar from './components/TitleBar';
 import CueNoteMain from './components/CueNoteMain';
 
 function App() {
@@ -14,10 +14,13 @@ function App() {
     const [cues, setCues] = useState<Cue[]>([]);
     const [activeCue, setActiveCue] = useState<Cue | null>(null);
     const [activeCueNumber, setActiveCueNumber] = useState<string | null>(null);
+    const [showName, setShowName] = useState<string | null>(null);
 
-    const onInitialSyncComplete = async () => {
+    const onInitialSyncComplete = async (showName?: string) => {
         const cues = await window.api.getCues();
         setCues(cues);
+
+        setShowName(showName ?? null);
     };
 
     const onCueCreated = (newCue: Cue) => {
@@ -63,6 +66,7 @@ function App() {
         setCues([]);
         setActiveCue(null);
         setActiveCueNumber(null);
+        setShowName(null);
     };
 
     useEffect(() => {
@@ -131,28 +135,36 @@ function App() {
     };
 
     return (
-        <div className='select-none text-white bg-stone-900'>
-            {connectionState === 'connected' &&
-            initialSyncProgress === undefined ? (
-                <div className='flex flex-col h-screen min-h-screen '>
-                    <div className='flex-grow-0'>
-                        <Toolbar
+        <div className='flex flex-col h-screen min-h-screen select-none text-white overflow-hidden bg-stone-900'>
+            <div className='basis-12 grow-0 shrink-0'>
+                <TitleBar
+                    onTriggerDisconnect={
+                        connectionState === 'connected' &&
+                        initialSyncProgress === undefined
+                            ? window.api.disconnectConsole
+                            : undefined
+                    }
+                    title={showName ?? 'CueNote'}
+                />
+            </div>
+
+            <div className='grow h-0 p-2'>
+                {connectionState === 'connected' &&
+                initialSyncProgress === undefined ? (
+                    <div className='h-full overflow-hidden'>
+                        <CueNoteMain activeCue={activeCue} cues={cues} />
+                    </div>
+                ) : (
+                    <div className='-m-12'>
+                        <ConsoleConnectionCard
+                            connectionState={connectionState}
+                            initialSyncProgress={initialSyncProgress}
+                            onTriggerConnect={window.api.connectConsole}
                             onTriggerDisconnect={window.api.disconnectConsole}
                         />
                     </div>
-
-                    <div className='p-2 flex-grow h-full max-h-full overflow-hidden'>
-                        <CueNoteMain activeCue={activeCue} cues={cues} />
-                    </div>
-                </div>
-            ) : (
-                <ConsoleConnectionCard
-                    connectionState={connectionState}
-                    initialSyncProgress={initialSyncProgress}
-                    onTriggerConnect={window.api.connectConsole}
-                    onTriggerDisconnect={window.api.disconnectConsole}
-                />
-            )}
+                )}
+            </div>
         </div>
     );
 }

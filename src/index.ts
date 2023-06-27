@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { EosConsole } from './main/eos-console';
 import { Cue } from './models/eos';
+import * as colors from 'tailwindcss/colors';
 
 let mainWindow: BrowserWindow | null;
 let eos: EosConsole | null;
@@ -20,11 +21,16 @@ if (require('electron-squirrel-startup')) {
 
 const createWindow = (): void => {
     mainWindow = new BrowserWindow({
-        backgroundColor: '#141414',
+        backgroundColor: colors.stone[900],
         height: 768,
         minHeight: 600,
         minWidth: 800,
         title: INITIAL_WINDOW_TITLE,
+        titleBarOverlay: {
+            color: colors.stone[900],
+            symbolColor: colors.gray[400],
+        },
+        titleBarStyle: 'hidden',
         webPreferences: {
             devTools: !app.isPackaged,
             preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
@@ -99,9 +105,10 @@ ipcMain.on('console:connect', (_event, ...[address]) => {
     });
 
     eos.on('initialSyncComplete', () => {
-        mainWindow?.webContents.send('console:initial-sync-complete');
-
         const showName = eos?.getShowName();
+
+        mainWindow?.webContents.send('console:initial-sync-complete', showName);
+
         if (showName) {
             mainWindow?.setTitle(`${INITIAL_WINDOW_TITLE} - ${showName}`);
         }
