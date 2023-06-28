@@ -1,7 +1,7 @@
 {
     "name": "cue-note",
     "productName": "Cue Note",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "Note-taking utility for ETC Eos Family lighting consoles",
     "main": ".webpack/main",
     "scripts": {
