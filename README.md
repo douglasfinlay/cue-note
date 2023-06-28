@@ -1,4 +1,4 @@
-<h1 align="center">Cue Note</h1>
+<h1 align="center">CueNote</h1>
   <p align="center">
     Note-taking utility for ETC Eos Family lighting consoles
     <br />
@@ -8,6 +8,12 @@
     <a href="https://github.com/douglasfinlay/cue-note/issues/new?template=feature-request.md">Request Feature</a>
   </p>
 </div>
+
+![CueNote Screenshot](assets/cue-note-main.png)
+
+> **Warning**  
+> This project is under active development and breaking changes are likely. Use
+> at your own risk!
 
 ## About
 
@@ -60,9 +66,9 @@ be saved to your local machine without modifying the Eos show file.
 - [x] Quick note in-place edit
 - [x] Quick note keyboard shortcuts
 - [ ] Styling overhaul
-- [ ] Add screenshots to this readme
 - [ ] Button to filter cue list to noted cues only
 - [ ] Auto-reconnect after connection loss
+- [ ] Resync when a different show file is loaded
 
 ## Contributing
 

@@ -154,7 +154,7 @@ function App() {
             <div className='grow h-0 p-2'>
                 {connectionState === 'connected' &&
                 initialSyncProgress === undefined ? (
-                    <div className='h-full overflow-hidden'>
+                    <div className='h-full'>
                         <CueNoteMain activeCue={activeCue} cues={cues} />
                     </div>
                 ) : (
