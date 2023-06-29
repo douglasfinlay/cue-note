@@ -17,13 +17,13 @@
 
 ## About
 
-_Cue Note_ is a desktop utility to remotely add and edit notes in an Eos show file.
+CueNote is a desktop utility to remotely add and edit notes in an Eos show file.
 
 ## Getting Started
 
 ### Prebuilt Binary
 
-_Cue Note_ is available for Windows and macOS. Download the latest binary for your platform from the [Releases](https://github.com/douglasfinlay/cue-note/releases) page.
+CueNote is available for Windows and macOS. Download the latest binary for your platform from the [Releases](https://github.com/douglasfinlay/cue-note/releases) page.
 
 ### Building from Source
 
@@ -76,7 +76,7 @@ All contributions are greatly appreciated. Please feel free to [open issues](htt
 
 ## License
 
-_Cue Note_ is licensed under the MIT license. See [`LICENSE`](https://github.com/douglasfinlay/cue-note/blob/main/LICENSE) for details.
+CueNote is licensed under the MIT license. See [`LICENSE`](https://github.com/douglasfinlay/cue-note/blob/main/LICENSE) for details.
 
 ## Disclaimer
 
