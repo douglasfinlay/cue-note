@@ -69,6 +69,7 @@ be saved to your local machine without modifying the Eos show file.
 - [ ] Button to filter cue list to noted cues only
 - [ ] Auto-reconnect after connection loss
 - [ ] Resync when a different show file is loaded
+- [ ] Move Eos/OSC functionality into a separate library ([node-eos-console](https://github.com/douglasfinlay/node-eos-console))
 
 ## Contributing
 
