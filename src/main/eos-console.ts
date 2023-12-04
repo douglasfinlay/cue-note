@@ -131,17 +131,8 @@ export class EosConsole extends (EventEmitter as new () => TypedEmitter<EosConso
         this.socket?.destroy();
     }
 
-    executeCommand(
-        command: string,
-        substitutions: string[],
-        newCommand = true,
-    ) {
-        const msg: EosOscMessage = {
-            address: newCommand ? '/eos/newcmd' : '/eos/cmd',
-            args: [command, ...substitutions],
-        };
-
-        this.socket?.writeOsc(msg);
+    async send(address: string, args: unknown[]) {
+        await this.socket?.writeOsc({ address, args });
     }
 
     fireCue(cueListNumber: number, cueNumber: string) {

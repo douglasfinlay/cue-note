@@ -174,7 +174,6 @@ ipcMain.handle(
 ipcMain.on(
     'console:update-cue-notes',
     (_event, ...[cueListNumber, cueNumber, notes]) => {
-        const command = 'Cue %1 / %2 Notes %3 Enter';
-        eos?.executeCommand(command, [cueListNumber, cueNumber, notes]);
+        eos?.send(`/eos/set/cue/${cueListNumber}/${cueNumber}/notes`, [notes]);
     },
 );
