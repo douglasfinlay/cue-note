@@ -1,16 +1,16 @@
+import { Cue, TargetNumber } from 'eos-console';
 import { useEffect, useRef } from 'react';
-import { Cue } from '../../models/eos';
 import CueListItem from './CueListItem';
 
 interface CueListProps {
-    activeCueNumber?: string | null;
+    activeCueNumber?: TargetNumber | null;
     cues: Cue[];
-    editingCueNumber?: string | null;
-    focusCueNumber?: string | null;
+    editingCueNumber?: TargetNumber | null;
+    focusCueNumber?: TargetNumber | null;
     showParts?: boolean;
-    onTriggerClearCue?: (cueNumber: string) => void;
-    onTriggerEditCue?: (cueNumber: string) => void;
-    onTriggerGoToCue?: (cueNumber: string) => void;
+    onTriggerClearCue?: (cueNumber: TargetNumber) => void;
+    onTriggerEditCue?: (cueNumber: TargetNumber) => void;
+    onTriggerGoToCue?: (cueNumber: TargetNumber) => void;
 }
 
 function CueList({
@@ -24,17 +24,17 @@ function CueList({
     onTriggerGoToCue,
 }: CueListProps) {
     if (!showParts) {
-        cues = cues.filter((cue) => !cue.isPart);
+        cues = cues.filter((cue) => cue.cuePartIndex === null);
     }
 
     const containerRef = useRef<HTMLDivElement>(null);
 
-    const scrollToCue = (cueNumber: string) => {
+    const scrollToCue = (cueNumber: TargetNumber) => {
         if (!containerRef.current) {
             return;
         }
 
-        const cueIndex = cues.findIndex((cue) => cue.cueNumber === cueNumber);
+        const cueIndex = cues.findIndex((cue) => cue.targetNumber === cueNumber);
 
         if (cueIndex === -1) {
             return;
@@ -67,16 +67,16 @@ function CueList({
         <CueListItem
             key={i}
             cue={cue}
-            active={!!activeCueNumber && cue.cueNumber === activeCueNumber}
-            editing={!!editingCueNumber && cue.cueNumber === editingCueNumber}
+            active={!!activeCueNumber && cue.targetNumber === activeCueNumber}
+            editing={!!editingCueNumber && cue.targetNumber === editingCueNumber}
             onTriggerClear={
-                onTriggerClearCue && (() => onTriggerClearCue(cue.cueNumber))
+                onTriggerClearCue && (() => onTriggerClearCue(cue.targetNumber))
             }
             onTriggerEdit={
-                onTriggerEditCue && (() => onTriggerEditCue(cue.cueNumber))
+                onTriggerEditCue && (() => onTriggerEditCue(cue.targetNumber))
             }
             onTriggerGoTo={
-                onTriggerGoToCue && (() => onTriggerGoToCue(cue.cueNumber))
+                onTriggerGoToCue && (() => onTriggerGoToCue(cue.targetNumber))
             }
         />
     ));

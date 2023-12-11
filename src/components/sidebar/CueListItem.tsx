@@ -1,5 +1,5 @@
 import cx from 'classnames';
-import { Cue } from '../../models/eos';
+import { Cue } from 'eos-console';
 
 interface CueProps {
     cue: Cue;
@@ -63,7 +63,7 @@ function CueListItem({
             <div className={itemStyle}>
                 <div className='h-6 flex align-items-center'>
                     <div className={cueNumberStyle}>
-                        {cue.isPart ? `P${cue.cuePartNumber}` : cue.cueNumber}
+                        {cue.cuePartIndex !== null ? `P${cue.cuePartIndex}` : cue.targetNumber}
                     </div>
                     <div className={cueLabelStyle}>{cue.label}</div>
                     <div className='flex gap-2 grow-0 shrink-0'>
@@ -119,7 +119,7 @@ function CueListItem({
                 )}
             </div>
 
-            {cue.isSceneEnd && <div className={sceneMarkerLineStyle}></div>}
+            {cue.sceneEnd && <div className={sceneMarkerLineStyle}></div>}
         </div>
     );
 }

@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
-import { EosConsole } from './main/eos-console';
-import { Cue } from './models/eos';
+import { EosConsole, RecordTargetType, TargetNumber } from 'eos-console';
+import { EosCueIdentifier } from 'eos-console/lib/eos-types';
 import * as colors from 'tailwindcss/colors';
 
 let mainWindow: BrowserWindow | null;
@@ -104,34 +104,31 @@ ipcMain.on('console:connect', (_event, ...[address]) => {
         mainWindow?.setTitle(INITIAL_WINDOW_TITLE);
     });
 
-    eos.on('initialSyncComplete', () => {
-        const showName = eos?.getShowName();
-
-        mainWindow?.webContents.send('console:initial-sync-complete', showName);
-
+    eos.on('show-name', (showName: string) => {
+        mainWindow?.webContents.send('console:show-name', showName);
+        
+        let windowTitle = INITIAL_WINDOW_TITLE;
+        
         if (showName) {
-            mainWindow?.setTitle(`${INITIAL_WINDOW_TITLE} - ${showName}`);
+            windowTitle += ` - ${showName}`;
         }
+        
+        mainWindow?.setTitle(windowTitle);
     });
 
-    eos.on('activeCue', (cueNumber: string | null) => {
-        mainWindow?.webContents.send('console:active-cue', cueNumber);
+    eos.on('active-cue', (cue: EosCueIdentifier | null) => {
+        mainWindow?.webContents.send('console:active-cue', cue);
     });
 
-    eos.on('pendingCue', (cueNumber: string | null) => {
-        mainWindow?.webContents.send('console:pending-cue', cueNumber);
+    eos.on('pending-cue', (cue: EosCueIdentifier | null) => {
+        mainWindow?.webContents.send('console:pending-cue', cue);
     });
 
-    eos.on('cueCreate', (cue: Cue) => {
-        mainWindow?.webContents.send('console:cue:created', cue);
-    });
-
-    eos.on('cueDelete', (cue: Cue) => {
-        mainWindow?.webContents.send('console:cue:deleted', cue.cueNumber);
-    });
-
-    eos.on('cueUpdate', (cue: Cue) => {
-        mainWindow?.webContents.send('console:cue:updated', cue);
+    // FIXME: cue list should not be an array
+    eos.on('record-target-change', (targetType: RecordTargetType, cueNumbers: TargetNumber[], cueList: TargetNumber[]) => {
+        if (targetType === 'cue' && cueList[0] === 1) {
+            mainWindow?.webContents.send('console:cue-change', cueNumbers, cueList[0]);
+        }
     });
 
     eos.connect();
@@ -144,18 +141,15 @@ ipcMain.on('console:disconnect', () => {
     }
 });
 
-ipcMain.handle('console:get-cues', () => eos?.getCues() ?? []);
+ipcMain.handle('console:get-cue', (_event, ...[cueNumber]) => eos?.getCue(1, cueNumber));
 
-ipcMain.handle('console:get-current-cue', () => eos?.activeCue);
+ipcMain.handle('console:get-cues', () => eos?.getCues(1) ?? []);
+
+ipcMain.handle('console:get-current-cue', () => eos?.activeCueNumber);
 
 ipcMain.handle('console:get-host', () => eos?.host);
 
-ipcMain.handle(
-    'console:get-initial-sync-progress',
-    () => eos?.initialSyncProgress,
-);
-
-ipcMain.handle('console:get-pending-cue', () => eos?.pendingCue);
+ipcMain.handle('console:get-pending-cue', () => eos?.pendingCueNumber);
 
 ipcMain.on('console:go-to-cue', (_event, ...[cueNumber]) =>
     eos?.fireCue(1, cueNumber),
@@ -163,17 +157,12 @@ ipcMain.on('console:go-to-cue', (_event, ...[cueNumber]) =>
 
 ipcMain.handle(
     'console:get-connection-state',
-    () => eos?.consoleConnectionState ?? 'disconnected',
-);
-
-ipcMain.handle(
-    'console:is-initial-sync-complete',
-    () => eos?.isInitialSyncComplete ?? false,
+    () => eos?.connectionState ?? 'disconnected',
 );
 
 ipcMain.on(
     'console:update-cue-notes',
     (_event, ...[cueListNumber, cueNumber, notes]) => {
-        eos?.send(`/eos/set/cue/${cueListNumber}/${cueNumber}/notes`, [notes]);
+        eos?.sendMessage(`/eos/set/cue/${cueListNumber}/${cueNumber}/notes`, [notes]);
     },
 );

@@ -47,10 +47,9 @@
     "dependencies": {
         "classnames": "^2.3.2",
         "electron-squirrel-startup": "^1.0.0",
-        "osc-min": "^1.1.2",
+        "eos-console": "file:../eos-console",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
-        "react-hotkeys-hook": "^4.3.8",
-        "slip": "^1.0.2"
+        "react-hotkeys-hook": "^4.3.8"
     }
 }

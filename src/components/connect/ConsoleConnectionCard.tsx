@@ -1,9 +1,9 @@
-import { ConnectionState } from '../../models/eos';
+import { EosConnectionState } from 'eos-console';
 import ConsoleConnectionForm from './ConsoleConnectionForm';
 import ConsoleSyncProgress from './ConsoleSyncProgress';
 
 interface ConsoleConnectionCardProps {
-    connectionState: ConnectionState;
+    connectionState: EosConnectionState;
     initialSyncProgress?: number;
 
     onTriggerConnect: (address: string) => void;

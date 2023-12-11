@@ -1,66 +1,86 @@
+import { Cue, EosConnectionState, TargetNumber } from 'eos-console';
 import { useEffect, useState } from 'react';
-import { ConnectionState, Cue } from './models/eos';
-import { RemoveEventListenerFunc } from './preload';
-import ConsoleConnectionCard from './components/connect/ConsoleConnectionCard';
-import TitleBar from './components/TitleBar';
 import CueNoteMain from './components/CueNoteMain';
+import TitleBar from './components/TitleBar';
+import ConsoleConnectionCard from './components/connect/ConsoleConnectionCard';
+import { RemoveEventListenerFunc } from './preload';
 
 function App() {
     const [connectionState, setConnectionState] =
-        useState<ConnectionState>('disconnected');
+        useState<EosConnectionState>('disconnected');
     const [initialSyncProgress, setInitialSyncProgress] = useState<
         number | undefined
     >();
     const [cues, setCues] = useState<Cue[]>([]);
     const [activeCue, setActiveCue] = useState<Cue | null>(null);
-    const [activeCueNumber, setActiveCueNumber] = useState<string | null>(null);
+    const [activeCueNumber, setActiveCueNumber] = useState<TargetNumber | null>(null);
     const [showName, setShowName] = useState<string | null>(null);
 
-    const onInitialSyncComplete = async (showName?: string) => {
+    const loadCues = async () => {
+        setInitialSyncProgress(0.5);
+
         const cues = await window.api.getCues();
         setCues(cues);
 
-        setShowName(showName ?? null);
+        const acn = await window.api.getCurrentCue();
+        setActiveCueNumber(acn?.cueList === 1 ? acn.cueNumber : null);
+
+        setInitialSyncProgress(undefined);
     };
-
-    const onCueCreated = (newCue: Cue) => {
-        setCues((cues) => {
-            const previousCueIndex = cues.findIndex(
-                (cue) => Number(cue.cueNumber) > Number(newCue.cueNumber),
-            );
-
-            if (previousCueIndex === -1) {
-                return [...cues, newCue];
-            }
-
-            return [
-                ...cues.slice(0, previousCueIndex),
-                newCue,
-                ...cues.slice(previousCueIndex),
-            ];
-        });
-    };
-
-    const onCueDeleted = (cueNumber: string) => {
-        setCues((cues) => {
-            const cueIndex = cues.findIndex(
-                (cue) => cue.cueNumber === cueNumber,
-            );
-
-            if (cueIndex === -1) {
-                return cues;
-            }
-
-            return [...cues.slice(0, cueIndex), ...cues.slice(cueIndex + 1)];
-        });
-    };
-
-    const onCueUpdated = (updatedCue: Cue) =>
-        setCues((cues) =>
-            cues.map((cue) =>
-                cue.cueNumber === updatedCue.cueNumber ? updatedCue : cue,
-            ),
+    
+    const onCuesChanged = (cueNumbers: TargetNumber[], cueList: TargetNumber) => {
+        if (cueList !== 1) {
+            return;
+        }
+        
+        for (const cueNumber of cueNumbers) {
+            window.api.getCue(cueNumber).then((cue) => {
+                setCues((cues) => {
+                    if (!cue) {
+                        return deleteCue(cues, cueNumber);
+                    } else if (cues.some((cue) => cue.targetNumber === cueNumber)) {
+                        return replaceCue(cues, cue);
+                    } else {
+                        return insertCue(cues, cue);
+                    }
+                });
+            });
+        }
+    }
+    
+    const insertCue = (cues: Cue[], newCue: Cue) => {
+        const previousCueIndex = cues.findIndex(
+            (cue) => cue.targetNumber > newCue.targetNumber,
         );
+
+        if (previousCueIndex === -1) {
+            return [...cues, newCue];
+        }
+
+        return [
+            ...cues.slice(0, previousCueIndex),
+            newCue,
+            ...cues.slice(previousCueIndex),
+        ];
+    };
+
+    const deleteCue = (cues: Cue[], cueNumber: TargetNumber) => {
+        const cueIndex = cues.findIndex(
+            (cue) => cue.targetNumber === cueNumber,
+        );
+
+        if (cueIndex === -1) {
+            return cues;
+        }
+
+        return [...cues.slice(0, cueIndex), ...cues.slice(cueIndex + 1)];
+    };
+
+    const replaceCue = (cues: Cue[], updatedCue: Cue) => {
+        return cues.map((cue) =>
+            cue.targetNumber === updatedCue.targetNumber ? updatedCue : cue,
+        );
+    };
 
     const clearState = () => {
         setCues([]);
@@ -72,7 +92,7 @@ function App() {
     useEffect(() => {
         if (activeCueNumber) {
             const activeCue = cues.find(
-                (cue) => cue.cueNumber === activeCueNumber,
+                (cue) => cue.targetNumber === activeCueNumber,
             );
             setActiveCue(activeCue ?? null);
         }
@@ -82,39 +102,29 @@ function App() {
         if (connectionState === 'disconnected') {
             clearState();
         } else if (connectionState === 'connected') {
-            updateInitialSyncProgress();
+            loadCues();
         }
     }, [connectionState]);
 
     useEffect(() => {
         const eventListeners: RemoveEventListenerFunc[] = [];
 
-        eventListeners.push(window.api.onActiveCue(setActiveCueNumber));
+        eventListeners.push(window.api.onActiveCue(cn => {
+            setActiveCueNumber(cn);
+        }));
         eventListeners.push(
             window.api.onConsoleConnectionStateChanged(setConnectionState),
         );
         eventListeners.push(
-            window.api.onConsoleInitialSyncComplete(onInitialSyncComplete),
+            window.api.onShowName((name) => {
+                setShowName(name ?? null);
+            }),
         );
-        eventListeners.push(window.api.onCueCreated(onCueCreated));
-        eventListeners.push(window.api.onCueDeleted(onCueDeleted));
-        eventListeners.push(window.api.onCueUpdated(onCueUpdated));
+        eventListeners.push(window.api.onCueChange(onCuesChanged));
 
         (async () => {
             const connectionState = await window.api.getConnectionState();
             setConnectionState(connectionState);
-
-            const initialSyncComplete =
-                await window.api.isInitialSyncComplete();
-            if (initialSyncComplete) {
-                const cues = await window.api.getCues();
-                setCues(cues);
-
-                const activeCue = await window.api.getCurrentCue();
-                setActiveCueNumber(activeCue?.cueNumber ?? null);
-            } else {
-                updateInitialSyncProgress();
-            }
         })();
 
         return () => {
@@ -123,16 +133,6 @@ function App() {
             }
         };
     }, []);
-
-    const updateInitialSyncProgress = async () => {
-        const progress = await window.api.getInitialSyncProgress();
-        setInitialSyncProgress(progress);
-
-        if (progress !== undefined && progress < 1) {
-            // There is still work to be done, check again later
-            setTimeout(updateInitialSyncProgress, 10);
-        }
-    };
 
     const isMac = navigator.platform.includes('Mac');
 

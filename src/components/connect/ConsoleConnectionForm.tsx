@@ -1,5 +1,5 @@
+import { EosConnectionState } from 'eos-console';
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
-import { ConnectionState } from '../../models/eos';
 import useLocalStorage from '../../hooks/use-local-storage';
 
 const HOSTNAME =
@@ -9,7 +9,7 @@ const IPV4_ADDRESS =
 const IPV6_ADDRESS = /^(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}$/;
 
 interface ConsoleConnectionProps {
-    connectionState: ConnectionState;
+    connectionState: EosConnectionState;
     onTriggerConnect: (address: string) => void;
 }
 

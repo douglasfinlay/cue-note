@@ -1,5 +1,5 @@
 import classNames from 'classnames';
-import { Cue } from '../models/eos';
+import { Cue } from 'eos-console';
 
 interface PlaybackStatusDisplayProps {
     active: Cue | null;
@@ -36,14 +36,14 @@ function PlaybackStatusDisplay({
         <div className={mainClassNames}>
             <div className='text-2xl h-10 flex align-items-center bg-neutral-900'>
                 <div className={activeCueBackgroundClassNames}>
-                    {active?.cueNumber}
+                    {active?.targetNumber}
                 </div>
                 <span className={activeCueTextClassNames}>{active?.label}</span>
             </div>
             {next !== undefined && (
                 <div className='text-lg h-8 flex align-items-center pt-3 ml-3'>
                     <div className='flex flex-col justify-center bg-black text-white font-bold shrink-0 basis-32 pl-3'>
-                        {next?.cueNumber}
+                        {next?.targetNumber}
                     </div>
                     <div className='self-center text-gray-200 pl-3 text-ellipsis overflow-hidden whitespace-nowrap'>
                         {next?.label}
