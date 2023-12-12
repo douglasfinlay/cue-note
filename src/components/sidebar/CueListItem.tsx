@@ -23,11 +23,12 @@ function CueListItem({
 
     const sceneMarkerLineStyle = 'h-1.5 bg-gray-400 my-2 grow';
 
-    const itemStyle = cx('mb-2 w-full border-l-8 border-transparent', {
+    const itemStyle = cx('mb-2 w-full border-l-8', {
         'bg-neutral-900': !!cue.notes,
         'border-green-600 py-2': active,
-        'border-purple-400': editing && !active,
         'border-slate-600': !!cue.notes && !active && !editing,
+        'border-transparent': !cue.notes && !active && !editing,
+        'border-purple-400': editing,
     });
 
     const cueLabelStyle = cx(
