@@ -8,37 +8,50 @@ import { RemoveEventListenerFunc } from './preload';
 function App() {
     const [connectionState, setConnectionState] =
         useState<EosConnectionState>('disconnected');
-    const [initialSyncProgress, setInitialSyncProgress] = useState<
-        number | undefined
-    >();
-    const [cues, setCues] = useState<Cue[]>([]);
+    const [syncing, setSyncing] = useState(false);
+    const [syncProgress, setSyncProgress] = useState<number | null>(null);
+
     const [activeCue, setActiveCue] = useState<Cue | null>(null);
-    const [activeCueNumber, setActiveCueNumber] = useState<TargetNumber | null>(null);
+    const [activeCueNumber, setActiveCueNumber] = useState<TargetNumber | null>(
+        null,
+    );
+    const [cues, setCues] = useState<Cue[]>([]);
     const [showName, setShowName] = useState<string | null>(null);
 
     const loadCues = async () => {
-        setInitialSyncProgress(0.5);
+        setSyncProgress(null);
+        setSyncing(true);
 
-        const cues = await window.api.getCues();
-        setCues(cues);
+        try {
+            const cues = await window.api.getCues();
+            setCues(cues);
 
-        const acn = await window.api.getCurrentCue();
-        setActiveCueNumber(acn?.cueList === 1 ? acn.cueNumber : null);
-
-        setInitialSyncProgress(undefined);
+            const acn = await window.api.getCurrentCue();
+            setActiveCueNumber(acn?.cueList === 1 ? acn.cueNumber : null);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setSyncing(false);
+            setSyncProgress(null);
+        }
     };
-    
-    const onCuesChanged = (cueNumbers: TargetNumber[], cueList: TargetNumber) => {
+
+    const onCuesChanged = (
+        cueNumbers: TargetNumber[],
+        cueList: TargetNumber,
+    ) => {
         if (cueList !== 1) {
             return;
         }
-        
+
         for (const cueNumber of cueNumbers) {
             window.api.getCue(cueNumber).then((cue) => {
                 setCues((cues) => {
                     if (!cue) {
                         return deleteCue(cues, cueNumber);
-                    } else if (cues.some((cue) => cue.targetNumber === cueNumber)) {
+                    } else if (
+                        cues.some((cue) => cue.targetNumber === cueNumber)
+                    ) {
                         return replaceCue(cues, cue);
                     } else {
                         return insertCue(cues, cue);
@@ -46,8 +59,8 @@ function App() {
                 });
             });
         }
-    }
-    
+    };
+
     const insertCue = (cues: Cue[], newCue: Cue) => {
         const previousCueIndex = cues.findIndex(
             (cue) => cue.targetNumber > newCue.targetNumber,
@@ -109,9 +122,11 @@ function App() {
     useEffect(() => {
         const eventListeners: RemoveEventListenerFunc[] = [];
 
-        eventListeners.push(window.api.onActiveCue(cn => {
-            setActiveCueNumber(cn);
-        }));
+        eventListeners.push(
+            window.api.onActiveCue((cn) => {
+                setActiveCueNumber(cn);
+            }),
+        );
         eventListeners.push(
             window.api.onConsoleConnectionStateChanged(setConnectionState),
         );
@@ -121,6 +136,7 @@ function App() {
             }),
         );
         eventListeners.push(window.api.onCueChange(onCuesChanged));
+        eventListeners.push(window.api.onGetCuesProgress(setSyncProgress));
 
         (async () => {
             const connectionState = await window.api.getConnectionState();
@@ -142,8 +158,7 @@ function App() {
                 <TitleBar
                     buttonPosition={isMac ? 'right' : 'left'}
                     onTriggerDisconnect={
-                        connectionState === 'connected' &&
-                        initialSyncProgress === undefined
+                        connectionState === 'connected' && !syncing
                             ? window.api.disconnectConsole
                             : undefined
                     }
@@ -152,8 +167,7 @@ function App() {
             </div>
 
             <div className='grow h-0 p-2'>
-                {connectionState === 'connected' &&
-                initialSyncProgress === undefined ? (
+                {connectionState === 'connected' && !syncing ? (
                     <div className='h-full'>
                         <CueNoteMain activeCue={activeCue} cues={cues} />
                     </div>
@@ -161,7 +175,7 @@ function App() {
                     <div className='-m-12'>
                         <ConsoleConnectionCard
                             connectionState={connectionState}
-                            initialSyncProgress={initialSyncProgress}
+                            syncProgress={syncProgress}
                             onTriggerConnect={window.api.connectConsole}
                             onTriggerDisconnect={window.api.disconnectConsole}
                         />

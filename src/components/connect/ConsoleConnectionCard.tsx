@@ -4,7 +4,7 @@ import ConsoleSyncProgress from './ConsoleSyncProgress';
 
 interface ConsoleConnectionCardProps {
     connectionState: EosConnectionState;
-    initialSyncProgress?: number;
+    syncProgress: number | null;
 
     onTriggerConnect: (address: string) => void;
     onTriggerDisconnect: () => void;
@@ -25,7 +25,7 @@ const ConsoleConnectionCard = (props: ConsoleConnectionCardProps) => {
                     />
                 ) : (
                     <ConsoleSyncProgress
-                        progress={props.initialSyncProgress}
+                        progress={props.syncProgress}
                         onTriggerDisconnect={window.api.disconnectConsole}
                     />
                 )}

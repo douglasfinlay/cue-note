@@ -143,7 +143,22 @@ ipcMain.on('console:disconnect', () => {
 
 ipcMain.handle('console:get-cue', (_event, ...[cueNumber]) => eos?.getCue(1, cueNumber));
 
-ipcMain.handle('console:get-cues', () => eos?.getCues(1) ?? []);
+ipcMain.handle('console:get-cues', async () => {
+    if (!eos) {
+        return [];
+    }
+
+    const progressCallback = (complete: number, total: number) => {
+        mainWindow?.setProgressBar(complete / total);
+        mainWindow?.webContents.send('console:get-cues-progress', complete, total);
+    };
+
+    mainWindow?.setProgressBar(0);
+    const cues = await eos.getCues(1, progressCallback);
+    mainWindow?.setProgressBar(-1);
+
+    return cues;
+});
 
 ipcMain.handle('console:get-current-cue', () => eos?.activeCueNumber);
 

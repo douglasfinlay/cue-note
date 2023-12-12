@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 interface ConsoleSyncProgressProps {
-    progress?: number;
+    progress: number | null;
     onTriggerDisconnect: () => void;
 }
 
@@ -11,7 +11,7 @@ const ConsoleSyncProgress = (props: ConsoleSyncProgressProps) => {
     useEffect(() => {
         let progress = props.progress;
 
-        if (progress === undefined) {
+        if (progress === null) {
             setSyncProgress(null);
             return;
         }
@@ -31,7 +31,10 @@ const ConsoleSyncProgress = (props: ConsoleSyncProgressProps) => {
                         style={{ width: `${syncProgress}%` }}
                     ></div>
                     <div className='absolute top-0 left-0 h-full w-full flex items-center justify-center'>
-                        Syncing cues{syncProgress !== null && ` (${syncProgress.toFixed(0)}%)`}...
+                        Syncing cues{' '}
+                        {syncProgress !== null &&
+                            ` (${syncProgress.toFixed(0)}%)`}
+                        ...
                     </div>
                 </div>
 

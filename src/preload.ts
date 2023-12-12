@@ -45,12 +45,14 @@ export type ContextBridgeApi = {
         callback: (reason: string) => void,
     ) => RemoveEventListenerFunc;
 
-    onShowName: (
-        callback: (name: string) => void,
-    ) => RemoveEventListenerFunc;
-    
+    onShowName: (callback: (name: string) => void) => RemoveEventListenerFunc;
+
     onCueChange: (
         callback: (cueNumbers: TargetNumber[], cueList: TargetNumber) => void,
+    ) => RemoveEventListenerFunc;
+
+    onGetCuesProgress: (
+        callback: (progress: number) => void,
     ) => RemoveEventListenerFunc;
 };
 
@@ -61,8 +63,9 @@ const exposedApi: ContextBridgeApi = {
 
     getConnectionState: async () =>
         ipcRenderer.invoke('console:get-connection-state'),
-    
-    getCue: async (cueNumber) => ipcRenderer.invoke('console:get-cue', cueNumber),
+
+    getCue: async (cueNumber) =>
+        ipcRenderer.invoke('console:get-cue', cueNumber),
 
     getCues: async () => ipcRenderer.invoke('console:get-cues'),
 
@@ -75,12 +78,7 @@ const exposedApi: ContextBridgeApi = {
     goToCue: (cueNumber) => ipcRenderer.send('console:go-to-cue', cueNumber),
 
     updateCueNotes: (cueList, cueNumber, notes) =>
-        ipcRenderer.send(
-            'console:update-cue-notes',
-            cueList,
-            cueNumber,
-            notes,
-        ),
+        ipcRenderer.send('console:update-cue-notes', cueList, cueNumber, notes),
 
     onActiveCue: (callback) => {
         const subscription = (
@@ -158,7 +156,20 @@ const exposedApi: ContextBridgeApi = {
         return () => {
             ipcRenderer.off('console:cue-change', subscription);
         };
-    }
+    },
+
+    onGetCuesProgress: (callback) => {
+        const subscription = (
+            _event: IpcRendererEvent,
+            ...[completed, total]: [number, number]
+        ) => callback(completed / total);
+
+        ipcRenderer.on('console:get-cues-progress', subscription);
+
+        return () => {
+            ipcRenderer.off('console:get-cues-progress', subscription);
+        };
+    },
 };
 
 contextBridge.exposeInMainWorld('api', exposedApi);
