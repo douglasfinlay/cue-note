@@ -63,14 +63,14 @@ be saved to your local machine without modifying the Eos show file.
 
 ## To Do
 
+- [ ] Button to filter cue list to noted cues only
+- [ ] Automatically reconnect after connection loss
+- [ ] Re-sync when a different show file is loaded
+- [ ] Improve UI state management
 - [x] Quick note in-place edit
 - [x] Quick note keyboard shortcuts
 - [x] Styling overhaul
-- [ ] Button to filter cue list to noted cues only
-- [ ] Auto-reconnect after connection loss
-- [ ] Resync when a different show file is loaded
-- [ ] Move Eos/OSC functionality into a separate library ([node-eos-console](https://github.com/douglasfinlay/node-eos-console))
-- [ ] Improve UI state management
+- [x] Move Eos/OSC functionality into a separate library ([node-eos-console](https://github.com/douglasfinlay/node-eos-console))
 
 ## Contributing
 
