@@ -1,6 +1,5 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
-import { EosConsole, RecordTargetType, TargetNumber } from 'eos-console';
-import { EosCueIdentifier } from 'eos-console/lib/eos-types';
+import { EosConsole, EosCueIdentifier, RecordTargetType, TargetNumber } from 'eos-console';
 import * as colors from 'tailwindcss/colors';
 
 let mainWindow: BrowserWindow | null;

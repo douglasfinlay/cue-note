@@ -1475,6 +1475,11 @@ binary-extensions@^2.0.0:
   resolved "https://registry.yarnpkg.com/binary-extensions/-/binary-extensions-2.2.0.tgz#75f502eeaf9ffde42fc98829645be4ea76bd9e2d"
   integrity sha512-jDctJ/IVQbZoJykoeHbhXpOlNBqGNcwXJKJog42E5HDPUwQTSdjCHdihjj0DlnheQ7blbT6dHOafNAiS8ooQKA==
 
+binpack@~0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/binpack/-/binpack-0.1.0.tgz#bd3d0974c3f2a0446e17df4f60b55a72a205a97e"
+  integrity sha512-KcSrsGiIKgklTWweVb9XnZPWO1/rGSsK3fwR7VnbDPbLKPlkvSKd/ZrJ1W712r6HzH5u0fa/AZCftATO09x8Aw==
+
 bl@^4.1.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/bl/-/bl-4.1.0.tgz#451535264182bec2fbbc83a62ab98cf11d9f7b3a"
@@ -2357,8 +2362,13 @@ env-paths@^2.2.0:
   resolved "https://registry.yarnpkg.com/env-paths/-/env-paths-2.2.1.tgz#420399d416ce1fbe9bc0a07c62fa68d67fd0f8f2"
   integrity sha512-+h1lkLKhZMTYjog1VEpJNG7NZJWcuc2DDk/qsqSTRRCOXiLjeQ1d1/udrUGhqMxUgAlwKNZ0cf2uqan5GLuS2A==
 
-"eos-console@file:../eos-console":
-  version "0.0.0"
+eos-console@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/eos-console/-/eos-console-0.3.0.tgz#7df03f938d327eb667d944c51c9ce5ff57645643"
+  integrity sha512-pM0b7AGiRqu5Na6oYjhUUqqIQRkpbFqdD5GXlo8hVMYYf123B65C6IoDXVXOs+G4klsYmne/KW0QPqa4esTjig==
+  dependencies:
+    osc-min "^1.1.2"
+    slip "^1.0.2"
 
 err-code@^2.0.2:
   version "2.0.3"
@@ -4671,6 +4681,13 @@ ora@^5.1.0:
     strip-ansi "^6.0.0"
     wcwidth "^1.0.1"
 
+osc-min@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/osc-min/-/osc-min-1.1.2.tgz#3dcaff10f804c39b7080cf4c10fd7a4103cd9037"
+  integrity sha512-8DbiO8ME85R75stgNVCZtHxB9MNBBNcyy+isNBXrsFeinXGjwNAauvKVmGlfRas5VJWC/mhzIx7spR2gFvWxvg==
+  dependencies:
+    binpack "~0"
+
 p-cancelable@^2.0.0:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/p-cancelable/-/p-cancelable-2.1.1.tgz#aab7fbd416582fa32a3db49859c122487c5ed2cf"
@@ -5609,6 +5626,11 @@ slice-ansi@^4.0.0:
     ansi-styles "^4.0.0"
     astral-regex "^2.0.0"
     is-fullwidth-code-point "^3.0.0"
+
+slip@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/slip/-/slip-1.0.2.tgz#ba45a923034d6cf41b1a27aebe7128282c8d551f"
+  integrity sha512-XrcHe3NAcyD3wO+O4I13RcS4/3AF+S9RvGNj9JhJeS02HyImwD2E3QWLrmn9hBfL+fB6yapagwxRkeyYzhk98g==
 
 smart-buffer@^4.2.0:
   version "4.2.0"

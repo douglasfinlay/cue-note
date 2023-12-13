@@ -1,6 +1,5 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
-import { Cue, EosConnectionState, TargetNumber } from 'eos-console';
-import { EosCueIdentifier } from 'eos-console/lib/eos-types';
+import { Cue, EosConnectionState, EosCueIdentifier, TargetNumber } from 'eos-console';
 
 export type RemoveEventListenerFunc = () => void;
 
