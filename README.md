@@ -61,15 +61,16 @@ Connect to an Eos console via IP address or hostname. Please ensure _Third Party
 Right-click on a quick note button to change its text. This will automatically
 be saved to your local machine without modifying the Eos show file.
 
-## Roadmap
+## To Do
 
 - [x] Quick note in-place edit
 - [x] Quick note keyboard shortcuts
-- [ ] Styling overhaul
+- [x] Styling overhaul
 - [ ] Button to filter cue list to noted cues only
 - [ ] Auto-reconnect after connection loss
 - [ ] Resync when a different show file is loaded
 - [ ] Move Eos/OSC functionality into a separate library ([node-eos-console](https://github.com/douglasfinlay/node-eos-console))
+- [ ] Improve UI state management
 
 ## Contributing
 
