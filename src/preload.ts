@@ -4,7 +4,7 @@ import { Cue, EosConnectionState, EosCueIdentifier, TargetNumber } from 'eos-con
 export type RemoveEventListenerFunc = () => void;
 
 export type ContextBridgeApi = {
-    connectConsole: (address: string) => void;
+    connectConsole: (address: string) => Promise<void>;
 
     disconnectConsole: () => void;
 
@@ -56,7 +56,7 @@ export type ContextBridgeApi = {
 };
 
 const exposedApi: ContextBridgeApi = {
-    connectConsole: (address) => ipcRenderer.send('console:connect', address),
+    connectConsole: (address) => ipcRenderer.invoke('console:connect', address),
 
     disconnectConsole: () => ipcRenderer.send('console:disconnect'),
 

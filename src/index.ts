@@ -70,7 +70,7 @@ app.on('quit', () => {
     }
 });
 
-ipcMain.on('console:connect', (_event, ...[address]) => {
+ipcMain.handle('console:connect', async (_event, ...[address]) => {
     if (eos) {
         eos.disconnect();
     }
@@ -130,7 +130,7 @@ ipcMain.on('console:connect', (_event, ...[address]) => {
         }
     });
 
-    eos.connect();
+    await eos.connect();
 });
 
 ipcMain.on('console:disconnect', () => {
