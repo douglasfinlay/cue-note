@@ -54,7 +54,26 @@ CueNote is available for Windows and macOS. Download the latest binary for your 
 
 ## Usage
 
-Connect to an Eos console via IP address or hostname. Please ensure _Third Party OSC_ is enabled.
+### Connection
+
+Connect to an Eos console by entering its IP address or hostname.
+
+#### Eos v3.1.0 and Later
+
+Please ensure **Third Party OSC** is enabled in the _Interface Protocols_
+section of the Eos Shell.
+
+#### Earlier Eos Versions
+
+CueNote does not currently support connection using a custom port. To work
+around this:
+
+1. In the Eos Shell, under _Network > Interface Protocols_:
+   1. Enable **UDP Strings & OSC**
+   2. Set the OSC TCP mode to **TCP format for OSC 1.1 (SLIP)**.
+2. In Eos, under _Setup > System > Show Control > OSC_:
+   1. Enable both **OSC RX** and **OSC TX**.
+   2. Ensure **OSC TCP Server Ports** contains **3037**.
 
 ### Quick Note Buttons
 
