@@ -1,5 +1,11 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
-import { Cue, EosConnectionState, EosCueIdentifier, TargetNumber } from 'eos-console';
+import {
+    Cue,
+    EosConnectionState,
+    EosCueIdentifier,
+    EtcDiscoveredDevice,
+    TargetNumber,
+} from 'eos-console';
 
 export type RemoveEventListenerFunc = () => void;
 
@@ -21,6 +27,10 @@ export type ContextBridgeApi = {
     getPendingCue: () => Promise<EosCueIdentifier | undefined>;
 
     goToCue: (cueNumber: string) => void;
+
+    startDiscovery: () => void;
+
+    stopDiscovery: () => void;
 
     updateCueNotes: (
         cueList: TargetNumber,
@@ -53,6 +63,14 @@ export type ContextBridgeApi = {
     onGetCuesProgress: (
         callback: (progress: number) => void,
     ) => RemoveEventListenerFunc;
+
+    onDeviceFound: (
+        callback: (device: EtcDiscoveredDevice) => void,
+    ) => RemoveEventListenerFunc;
+
+    onDeviceLost: (
+        callback: (device: EtcDiscoveredDevice) => void,
+    ) => RemoveEventListenerFunc;
 };
 
 const exposedApi: ContextBridgeApi = {
@@ -75,6 +93,10 @@ const exposedApi: ContextBridgeApi = {
     getPendingCue: async () => ipcRenderer.invoke('console:get-pending-cue'),
 
     goToCue: (cueNumber) => ipcRenderer.send('console:go-to-cue', cueNumber),
+
+    startDiscovery: () => ipcRenderer.send('discovery:start'),
+
+    stopDiscovery: () => ipcRenderer.send('discovery:stop'),
 
     updateCueNotes: (cueList, cueNumber, notes) =>
         ipcRenderer.send('console:update-cue-notes', cueList, cueNumber, notes),
@@ -167,6 +189,32 @@ const exposedApi: ContextBridgeApi = {
 
         return () => {
             ipcRenderer.off('console:get-cues-progress', subscription);
+        };
+    },
+
+    onDeviceFound: (callback) => {
+        const subscription = (
+            _event: IpcRendererEvent,
+            ...[device]: [EtcDiscoveredDevice]
+        ) => callback(device);
+
+        ipcRenderer.on('discovery:found', subscription);
+
+        return () => {
+            ipcRenderer.off('discovery:found', subscription);
+        };
+    },
+
+    onDeviceLost: (callback) => {
+        const subscription = (
+            _event: IpcRendererEvent,
+            ...[device]: [EtcDiscoveredDevice]
+        ) => callback(device);
+
+        ipcRenderer.on('discovery:lost', subscription);
+
+        return () => {
+            ipcRenderer.off('discovery:lost', subscription);
         };
     },
 };

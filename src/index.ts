@@ -1,5 +1,12 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
-import { EosConsole, EosCueIdentifier, RecordTargetType, TargetNumber } from 'eos-console';
+import {
+    EosConsole,
+    EosCueIdentifier,
+    EtcDiscoveredDevice,
+    EtcDiscovery,
+    RecordTargetType,
+    TargetNumber,
+} from 'eos-console';
 import * as colors from 'tailwindcss/colors';
 
 let mainWindow: BrowserWindow | null;
@@ -17,6 +24,16 @@ declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 if (require('electron-squirrel-startup')) {
     app.quit();
 }
+
+const etcDiscovery = new EtcDiscovery();
+
+etcDiscovery
+    .on('found', (device: EtcDiscoveredDevice) => {
+        mainWindow?.webContents.send('discovery:found', device);
+    })
+    .on('lost', (device: EtcDiscoveredDevice) => {
+        mainWindow?.webContents.send('discovery:lost', device);
+    });
 
 const createWindow = (): void => {
     mainWindow = new BrowserWindow({
@@ -105,13 +122,13 @@ ipcMain.handle('console:connect', async (_event, ...[address]) => {
 
     eos.on('show-name', (showName: string) => {
         mainWindow?.webContents.send('console:show-name', showName);
-        
+
         let windowTitle = INITIAL_WINDOW_TITLE;
-        
+
         if (showName) {
             windowTitle += ` - ${showName}`;
         }
-        
+
         mainWindow?.setTitle(windowTitle);
     });
 
@@ -124,11 +141,22 @@ ipcMain.handle('console:connect', async (_event, ...[address]) => {
     });
 
     // FIXME: cue list should not be an array
-    eos.on('record-target-change', (targetType: RecordTargetType, cueNumbers: TargetNumber[], cueList: TargetNumber[]) => {
-        if (targetType === 'cue' && cueList[0] === 1) {
-            mainWindow?.webContents.send('console:cue-change', cueNumbers, cueList[0]);
-        }
-    });
+    eos.on(
+        'record-target-change',
+        (
+            targetType: RecordTargetType,
+            cueNumbers: TargetNumber[],
+            cueList: TargetNumber[],
+        ) => {
+            if (targetType === 'cue' && cueList[0] === 1) {
+                mainWindow?.webContents.send(
+                    'console:cue-change',
+                    cueNumbers,
+                    cueList[0],
+                );
+            }
+        },
+    );
 
     await eos.connect();
 });
@@ -140,7 +168,9 @@ ipcMain.on('console:disconnect', () => {
     }
 });
 
-ipcMain.handle('console:get-cue', (_event, ...[cueNumber]) => eos?.getCue(1, cueNumber));
+ipcMain.handle('console:get-cue', (_event, ...[cueNumber]) =>
+    eos?.getCue(1, cueNumber),
+);
 
 ipcMain.handle('console:get-cues', async () => {
     if (!eos) {
@@ -149,7 +179,11 @@ ipcMain.handle('console:get-cues', async () => {
 
     const progressCallback = (complete: number, total: number) => {
         mainWindow?.setProgressBar(complete / total);
-        mainWindow?.webContents.send('console:get-cues-progress', complete, total);
+        mainWindow?.webContents.send(
+            'console:get-cues-progress',
+            complete,
+            total,
+        );
     };
 
     mainWindow?.setProgressBar(0);
@@ -177,6 +211,16 @@ ipcMain.handle(
 ipcMain.on(
     'console:update-cue-notes',
     (_event, ...[cueListNumber, cueNumber, notes]) => {
-        eos?.sendMessage(`/eos/set/cue/${cueListNumber}/${cueNumber}/notes`, [notes]);
+        eos?.sendMessage(`/eos/set/cue/${cueListNumber}/${cueNumber}/notes`, [
+            notes,
+        ]);
     },
 );
+
+ipcMain.on('discovery:start', () => {
+    etcDiscovery.start();
+});
+
+ipcMain.on('discovery:stop', () => {
+    etcDiscovery.stop();
+});
