@@ -64,12 +64,8 @@ export type ContextBridgeApi = {
         callback: (progress: number) => void,
     ) => RemoveEventListenerFunc;
 
-    onDeviceFound: (
-        callback: (device: EtcDiscoveredDevice) => void,
-    ) => RemoveEventListenerFunc;
-
-    onDeviceLost: (
-        callback: (device: EtcDiscoveredDevice) => void,
+    onDiscoveredDevicesChanged: (
+        callback: (devices: EtcDiscoveredDevice[]) => void,
     ) => RemoveEventListenerFunc;
 };
 
@@ -192,29 +188,16 @@ const exposedApi: ContextBridgeApi = {
         };
     },
 
-    onDeviceFound: (callback) => {
+    onDiscoveredDevicesChanged: (callback) => {
         const subscription = (
             _event: IpcRendererEvent,
-            ...[device]: [EtcDiscoveredDevice]
-        ) => callback(device);
+            ...[devices]: [EtcDiscoveredDevice[]]
+        ) => callback(devices);
 
-        ipcRenderer.on('discovery:found', subscription);
-
-        return () => {
-            ipcRenderer.off('discovery:found', subscription);
-        };
-    },
-
-    onDeviceLost: (callback) => {
-        const subscription = (
-            _event: IpcRendererEvent,
-            ...[device]: [EtcDiscoveredDevice]
-        ) => callback(device);
-
-        ipcRenderer.on('discovery:lost', subscription);
+        ipcRenderer.on('discovery:devices-changed', subscription);
 
         return () => {
-            ipcRenderer.off('discovery:lost', subscription);
+            ipcRenderer.off('discovery:devices-changed', subscription);
         };
     },
 };

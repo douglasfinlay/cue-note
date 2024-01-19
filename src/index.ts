@@ -2,7 +2,6 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import {
     EosConsole,
     EosCueIdentifier,
-    EtcDiscoveredDevice,
     EtcDiscovery,
     RecordTargetType,
     TargetNumber,
@@ -27,13 +26,16 @@ if (require('electron-squirrel-startup')) {
 
 const etcDiscovery = new EtcDiscovery();
 
+const onDiscoveryDevicesChanged = () => {
+    mainWindow?.webContents.send(
+        'discovery:devices-changed',
+        etcDiscovery.getDevices(),
+    );
+};
+
 etcDiscovery
-    .on('found', (device: EtcDiscoveredDevice) => {
-        mainWindow?.webContents.send('discovery:found', device);
-    })
-    .on('lost', (device: EtcDiscoveredDevice) => {
-        mainWindow?.webContents.send('discovery:lost', device);
-    });
+    .on('found', onDiscoveryDevicesChanged)
+    .on('lost', onDiscoveryDevicesChanged);
 
 const createWindow = (): void => {
     mainWindow = new BrowserWindow({
@@ -218,9 +220,11 @@ ipcMain.on(
 );
 
 ipcMain.on('discovery:start', () => {
+    console.log('starting discovery');
     etcDiscovery.start();
 });
 
 ipcMain.on('discovery:stop', () => {
+    console.log('stopping discovery');
     etcDiscovery.stop();
 });
