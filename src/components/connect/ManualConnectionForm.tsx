@@ -1,4 +1,3 @@
-import { EosConnectionState } from 'eos-console';
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import useLocalStorage from '../../hooks/use-local-storage';
 
@@ -9,44 +8,25 @@ const IPV4_ADDRESS =
 const IPV6_ADDRESS = /^(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}$/;
 
 interface ManualConnectionFormProps {
-    connectionState: EosConnectionState;
+    disabled?: boolean;
     onTriggerConnect: (address: string) => void;
 }
 
 const ManualConnectionForm = (props: ManualConnectionFormProps) => {
     const [host, setHost] = useLocalStorage('host', '');
     const [isHostValid, setIsHostValid] = useState(false);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const hostInput = useRef<HTMLInputElement>(null);
 
-    const onConnectError = (reason: string) => {
-        let message = 'Unknown error';
-
-        if (reason.includes('ECONNREFUSED')) {
-            message = 'Connection refused';
-        } else if (reason.includes('ENOTFOUND')) {
-            message = 'Address not found';
-        } else if (reason === 'timed out') {
-            message = 'Connection timed out';
-        }
-
-        setErrorMessage(message);
-    };
-
     const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-
-        window.requestAnimationFrame(() => {
-            setErrorMessage(null);
-        });
 
         props.onTriggerConnect(host);
     };
 
     const onHostInputChange = (e: ChangeEvent<HTMLInputElement>) => {
         setHost(e.target.value);
-        setErrorMessage(null);
+        // setErrorMessage(null);
     };
 
     const validate = () => {
@@ -60,23 +40,10 @@ const ManualConnectionForm = (props: ManualConnectionFormProps) => {
     };
 
     useEffect(() => {
-        // If we've just shown the user an error, ensure the input field is
-        // selected and focussed to allow for a quick edit
-        if (errorMessage) {
-            hostInput.current?.select();
-        }
-    });
-
-    useEffect(() => {
         hostInput.current?.select();
 
         // Ensure the connect button is in the correct state from the start
         validate();
-
-        const removeConnectErrorListener =
-            window.api.onConnectError(onConnectError);
-
-        return removeConnectErrorListener;
     }, []);
 
     useEffect(validate, [host]);
@@ -90,7 +57,7 @@ const ManualConnectionForm = (props: ManualConnectionFormProps) => {
                         type='text'
                         className='text-center sm:text-sm block w-full p-4 bg-gray-700 placeholder-gray-400 text-white'
                         placeholder='Console IP'
-                        disabled={props.connectionState !== 'disconnected'}
+                        disabled={props.disabled}
                         value={host}
                         onChange={onHostInputChange}
                     />
@@ -99,11 +66,9 @@ const ManualConnectionForm = (props: ManualConnectionFormProps) => {
                 <button
                     type='submit'
                     className='w-full text-white bg-orange-800 hover:bg-orange-600 focus:ring-4 focus:outline-none font-medium text-sm p-4 text-center disabled:opacity-50'
-                    disabled={
-                        !isHostValid || props.connectionState === 'connecting'
-                    }
+                    disabled={!isHostValid || props.disabled}
                 >
-                    {props.connectionState === 'connecting' ? (
+                    {props.disabled ? (
                         <>
                             <svg
                                 className='inline w-4 h-4 mr-3 text-white animate-spin fill-black'
@@ -127,22 +92,6 @@ const ManualConnectionForm = (props: ManualConnectionFormProps) => {
                     )}
                 </button>
             </form>
-
-            {errorMessage && (
-                <div className='text-center absolute w-full'>
-                    <div
-                        className='p-2 items-center leading-none flex justify-center'
-                        role='alert'
-                    >
-                        <span className='flex border-2 border-red-500 text-red-500 uppercase px-2 py-1 text-xs font-bold mr-3'>
-                            Error
-                        </span>
-                        <span className='text-red-500 font-semibold text-left'>
-                            {errorMessage}
-                        </span>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

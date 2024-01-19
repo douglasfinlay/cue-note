@@ -1,7 +1,8 @@
 import { EosConnectionState } from 'eos-console';
+import { useState } from 'react';
+import toast from 'react-hot-toast';
 import ConsoleDiscovery from './ConsoleDiscovery';
 import ConsoleSyncProgress from './ConsoleSyncProgress';
-import { useState } from 'react';
 import ManualConnectionForm from './ManualConnectionForm';
 
 interface ConsoleConnectionCardProps {
@@ -13,10 +14,39 @@ interface ConsoleConnectionCardProps {
 }
 
 const ConsoleConnectionCard = (props: ConsoleConnectionCardProps) => {
+    const [isConnecting, setIsConnecting] = useState(false);
     const [manualConnection, setManualConnection] = useState(false);
 
     const toggleManualConnection = () => {
         setManualConnection((prev) => !prev);
+    };
+
+    const connectConsole = (address: string) => {
+        setIsConnecting(true);
+
+        window.api
+            .connectConsole(address)
+            .catch((err) => {
+                console.error(err);
+
+                let message = 'Unknown error';
+
+                if (err.message.includes('ECONNREFUSED')) {
+                    message = 'Connection refused';
+                } else if (err.message.includes('ENOTFOUND')) {
+                    message = 'Address not found';
+                } else if (err.message === 'timed out') {
+                    message = 'Connection timed out';
+                }
+
+                toast.error(message);
+            })
+            .finally(() => {
+                // Prevent spamming connection attempts
+                setTimeout(() => {
+                    setIsConnecting(false);
+                }, 500);
+            });
     };
 
     const showConnectionForm =
@@ -30,13 +60,13 @@ const ConsoleConnectionCard = (props: ConsoleConnectionCardProps) => {
                     <div className='text-center'>
                         {manualConnection ? (
                             <ManualConnectionForm
-                                connectionState={props.connectionState}
-                                onTriggerConnect={window.api.connectConsole}
+                                disabled={isConnecting}
+                                onTriggerConnect={connectConsole}
                             />
                         ) : (
                             <ConsoleDiscovery
-                                connectionState={props.connectionState}
-                                onTriggerConnect={window.api.connectConsole}
+                                disabled={isConnecting}
+                                onTriggerConnect={connectConsole}
                             />
                         )}
 
@@ -45,7 +75,9 @@ const ConsoleConnectionCard = (props: ConsoleConnectionCardProps) => {
                             className='mt-3 text-md text-neutral-500 hover:text-neutral-200'
                             onClick={toggleManualConnection}
                         >
-                            {manualConnection ? 'Back to Discovered Consoles' : 'Manual Connection'}
+                            {manualConnection
+                                ? 'Back to Console Discovery'
+                                : 'Manual Connection'}
                         </button>
                     </div>
                 ) : (

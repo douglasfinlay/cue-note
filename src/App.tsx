@@ -1,5 +1,6 @@
 import { Cue, EosConnectionState, TargetNumber } from 'eos-console';
 import { useEffect, useState } from 'react';
+import AppToaster from './AppToaster';
 import CueNoteMain from './components/CueNoteMain';
 import TitleBar from './components/TitleBar';
 import ConsoleConnectionCard from './components/connect/ConsoleConnectionCard';
@@ -165,7 +166,6 @@ function App() {
                     title={showName ?? 'CueNote'}
                 />
             </div>
-
             <div className='grow h-0 p-2'>
                 {connectionState === 'connected' && !syncing ? (
                     <div className='h-full'>
@@ -182,6 +182,8 @@ function App() {
                     </div>
                 )}
             </div>
+
+            <AppToaster />
         </div>
     );
 }
