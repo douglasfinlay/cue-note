@@ -7,7 +7,9 @@ interface CueListProps {
     cues: Cue[];
     editingCueNumber?: TargetNumber | null;
     focusCueNumber?: TargetNumber | null;
+    loading?: boolean;
     showParts?: boolean;
+
     onTriggerClearCue?: (cueNumber: TargetNumber) => void;
     onTriggerEditCue?: (cueNumber: TargetNumber) => void;
     onTriggerGoToCue?: (cueNumber: TargetNumber) => void;
@@ -18,6 +20,7 @@ function CueList({
     cues,
     editingCueNumber,
     focusCueNumber,
+    loading,
     showParts = false,
     onTriggerClearCue,
     onTriggerEditCue,
@@ -34,7 +37,9 @@ function CueList({
             return;
         }
 
-        const cueIndex = cues.findIndex((cue) => cue.targetNumber === cueNumber);
+        const cueIndex = cues.findIndex(
+            (cue) => cue.targetNumber === cueNumber,
+        );
 
         if (cueIndex === -1) {
             return;
@@ -63,12 +68,22 @@ function CueList({
         }
     }, [focusCueNumber, cues]);
 
+    if (loading) {
+        return (
+            <div className='h-full max-h-full min-w-full max-w-full flex flex-col items-center justify-center'>
+                <div className='animate-pulse'>Loading cues...</div>
+            </div>
+        );
+    }
+
     const cueComponents = cues.map((cue, i) => (
         <CueListItem
             key={i}
             cue={cue}
             active={!!activeCueNumber && cue.targetNumber === activeCueNumber}
-            editing={!!editingCueNumber && cue.targetNumber === editingCueNumber}
+            editing={
+                !!editingCueNumber && cue.targetNumber === editingCueNumber
+            }
             onTriggerClear={
                 onTriggerClearCue && (() => onTriggerClearCue(cue.targetNumber))
             }
@@ -83,7 +98,7 @@ function CueList({
 
     return (
         <div
-            className='max-h-full min-w-full max-w-full overflow-y-scroll scrollbar-hidden'
+            className='h-full max-h-full min-w-full max-w-full overflow-y-scroll scrollbar-hidden'
             ref={containerRef}
         >
             {cueComponents}

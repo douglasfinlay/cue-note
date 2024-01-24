@@ -1,23 +1,30 @@
 import { Cue, TargetNumber } from 'eos-console';
 import { useEffect, useRef, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
+import { RemoveEventListenerFunc } from '../preload';
 import NoteInput, { NoteInputHandle } from './NoteInput';
 import PlaybackStatusDisplay from './PlaybackStatusDisplay';
 import QuickNoteButtonGrid from './QuickNoteButtonGrid';
 import CueList from './sidebar/CueList';
 
-interface CueNoteMainProps {
-    activeCue: Cue | null;
-    cues: Cue[];
-}
+// interface CueNoteMainProps {
+//     cueList: number;
+// }
 
-const CueNoteMain = (props: CueNoteMainProps) => {
-    const [editNoteText, setEditNoteText] = useState('');
-    const [readyToNote, setReadyToNote] = useState(false);
-    const [editingCue, setEditingCue] = useState<Cue | null>(null);
-    const [editingCueNumber, setEditingCueNumber] = useState<TargetNumber | null>(
+const CueNoteMain = (/* props: CueNoteMainProps */) => {
+    const [cues, setCues] = useState<Cue[]>([]);
+    const [activeCue, setActiveCue] = useState<Cue | null>(null);
+    const [activeCueNumber, setActiveCueNumber] = useState<TargetNumber | null>(
         null,
     );
+    const [editingCue, setEditingCue] = useState<Cue | null>(null);
+    const [editingCueNumber, setEditingCueNumber] =
+        useState<TargetNumber | null>(null);
+
+    const [loadingCues, setLoadingCues] = useState(true);
+
+    const [editNoteText, setEditNoteText] = useState('');
+    const [readyToNote, setReadyToNote] = useState(false);
 
     const refNoteInput = useRef<NoteInputHandle>(null);
 
@@ -34,7 +41,7 @@ const CueNoteMain = (props: CueNoteMainProps) => {
 
     const onEditNoteTextEdited = (text: string) => {
         if (!editingCueNumber) {
-            setEditingCueNumber(props.activeCue?.targetNumber || null);
+            setEditingCueNumber(activeCue?.targetNumber ?? null);
         }
 
         setEditNoteText(text);
@@ -46,7 +53,7 @@ const CueNoteMain = (props: CueNoteMainProps) => {
     };
 
     const applyNoteToCurrentCue = (note: string) => {
-        const targetCueNumber = editingCueNumber || props.activeCue?.targetNumber;
+        const targetCueNumber = editingCueNumber || activeCue?.targetNumber;
 
         if (targetCueNumber) {
             applyNoteToCue(targetCueNumber, note);
@@ -65,8 +72,7 @@ const CueNoteMain = (props: CueNoteMainProps) => {
     const editCue = (cueNumber: TargetNumber) => {
         discardNote();
         setEditingCueNumber(cueNumber);
-
-        const cue = props.cues.find((cue) => cue.targetNumber === cueNumber);
+        const cue = cues.find((cue) => cue.targetNumber === cueNumber);
         setEditNoteText(cue?.notes ?? '');
 
         refNoteInput.current?.focus();
@@ -78,10 +84,97 @@ const CueNoteMain = (props: CueNoteMainProps) => {
         }
     };
 
+    const loadCues = async () => {
+        setLoadingCues(true);
+
+        try {
+            const cues = await window.api.getCues();
+            setCues(cues);
+
+            const acn = await window.api.getCurrentCue();
+            setActiveCueNumber(acn?.cueList === 1 ? acn.cueNumber : null);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoadingCues(false);
+        }
+    };
+
+    const deleteCue = (cues: Cue[], cueNumber: TargetNumber) => {
+        const cueIndex = cues.findIndex(
+            (cue) => cue.targetNumber === cueNumber,
+        );
+
+        if (cueIndex === -1) {
+            return cues;
+        }
+
+        return [...cues.slice(0, cueIndex), ...cues.slice(cueIndex + 1)];
+    };
+
+    const insertCue = (cues: Cue[], newCue: Cue) => {
+        const previousCueIndex = cues.findIndex(
+            (cue) => cue.targetNumber > newCue.targetNumber,
+        );
+
+        if (previousCueIndex === -1) {
+            return [...cues, newCue];
+        }
+
+        return [
+            ...cues.slice(0, previousCueIndex),
+            newCue,
+            ...cues.slice(previousCueIndex),
+        ];
+    };
+
+    const replaceCue = (cues: Cue[], updatedCue: Cue) => {
+        return cues.map((cue) =>
+            cue.targetNumber === updatedCue.targetNumber ? updatedCue : cue,
+        );
+    };
+
+    const onCuesChanged = (
+        cueNumbers: TargetNumber[],
+        cueList: TargetNumber,
+    ) => {
+        if (cueList !== 1) {
+            return;
+        }
+
+        for (const cueNumber of cueNumbers) {
+            window.api.getCue(cueNumber).then((cue) => {
+                setCues((cues) => {
+                    if (!cue) {
+                        return deleteCue(cues, cueNumber);
+                    } else if (
+                        cues.some((cue) => cue.targetNumber === cueNumber)
+                    ) {
+                        return replaceCue(cues, cue);
+                    } else {
+                        return insertCue(cues, cue);
+                    }
+                });
+            });
+        }
+    };
+
     useEffect(() => {
+        const ipcEventListeners: RemoveEventListenerFunc[] = [
+            window.api.onActiveCue(setActiveCueNumber),
+            window.api.onCueChange(onCuesChanged),
+            // window.api.onGetCuesProgress(setSyncProgress)
+        ];
+
         document.addEventListener('keydown', onKeyDown, false);
 
+        loadCues();
+
         return () => {
+            for (const removeListener of ipcEventListeners) {
+                removeListener();
+            }
+
             document.removeEventListener('keydown', onKeyDown, false);
         };
     }, []);
@@ -98,21 +191,30 @@ const CueNoteMain = (props: CueNoteMainProps) => {
             return;
         }
 
-        const editingCue = props.cues.find(
+        const editingCue = cues.find(
             (cue) => cue.targetNumber === editingCueNumber,
         );
         setEditingCue(editingCue ?? null);
-    }, [props.cues, editingCueNumber]);
+    }, [cues, editingCueNumber]);
 
     useEffect(() => {
-        const ready = !!editingCue || !!props.activeCue;
+        const ready = !!editingCue || !!activeCue;
 
         setReadyToNote(ready);
-    }, [props.activeCue, editingCue]);
+    }, [activeCue, editingCue]);
+
+    useEffect(() => {
+        if (activeCueNumber) {
+            const activeCue = cues.find(
+                (cue) => cue.targetNumber === activeCueNumber,
+            );
+            setActiveCue(activeCue ?? null);
+        }
+    }, [cues, activeCueNumber]);
 
     return (
         <div className='flex h-full max-h-full gap-2'>
-            <div className='basis-2/3 flex gap-3 flex-col min-w-0'>
+            <div className='basis-2/3 flex gap-3 flex-col'>
                 <div className='grow'>
                     <QuickNoteButtonGrid
                         disabled={!readyToNote}
@@ -121,7 +223,7 @@ const CueNoteMain = (props: CueNoteMainProps) => {
                 </div>
                 <div className='grow-0 shrink-0'>
                     <PlaybackStatusDisplay
-                        active={editingCue || props.activeCue}
+                        active={editingCue || activeCue}
                         disabled={!readyToNote}
                         editing={!!editingCue}
                     />
@@ -165,19 +267,32 @@ const CueNoteMain = (props: CueNoteMainProps) => {
                     </div>
                 </div>
             </div>
-            <div className='basis-1/3 grow-0 shrink-0 flex gap-2 relative'>
-                <CueList
-                    cues={props.cues}
-                    activeCueNumber={props.activeCue?.targetNumber}
-                    editingCueNumber={editingCueNumber}
-                    focusCueNumber={
-                        editingCueNumber || props.activeCue?.targetNumber
-                    }
-                    onTriggerClearCue={(cueNumber) =>
-                        applyNoteToCue(cueNumber, '')
-                    }
-                    onTriggerEditCue={editCue}
-                />
+            <div className='basis-1/3 flex flex-col'>
+                <div className='grow overflow-hidden'>
+                    <CueList
+                        cues={cues}
+                        loading={loadingCues}
+                        activeCueNumber={activeCue?.targetNumber}
+                        editingCueNumber={editingCueNumber}
+                        focusCueNumber={
+                            editingCueNumber || activeCue?.targetNumber
+                        }
+                        onTriggerClearCue={(cueNumber) =>
+                            applyNoteToCue(cueNumber, '')
+                        }
+                        onTriggerEditCue={editCue}
+                    />
+                </div>
+                {/* <div className='h-10 shrink-0'>
+                    <CueListSelect
+                        cueLists={[
+                            {
+                                targetNumber: 1,
+                                label: 'cuelist',
+                            } as any,
+                        ]}
+                    />
+                </div> */}
             </div>
         </div>
     );
