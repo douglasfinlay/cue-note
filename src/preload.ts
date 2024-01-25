@@ -1,5 +1,11 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
-import { Cue, EosConnectionState, EosCueIdentifier, TargetNumber } from 'eos-console';
+import {
+    Cue,
+    CueList,
+    EosConnectionState,
+    EosCueIdentifier,
+    TargetNumber,
+} from 'eos-console';
 
 export type RemoveEventListenerFunc = () => void;
 
@@ -10,9 +16,14 @@ export type ContextBridgeApi = {
 
     getConnectionState: () => Promise<EosConnectionState>;
 
-    getCue: (cueNumber: TargetNumber) => Promise<Cue | null>;
+    getCue: (
+        cueListNumber: TargetNumber,
+        cueNumber: TargetNumber,
+    ) => Promise<Cue | null>;
 
-    getCues: () => Promise<Cue[]>;
+    getCues: (cueListNumber: TargetNumber) => Promise<Cue[]>;
+
+    getCueLists: () => Promise<CueList[]>;
 
     getCurrentCue: () => Promise<EosCueIdentifier | undefined>;
 
@@ -29,10 +40,12 @@ export type ContextBridgeApi = {
     ) => void;
 
     onActiveCue: (
+        // FIXME: add cue list
         callback: (cueNumber: TargetNumber) => void,
     ) => RemoveEventListenerFunc;
 
     onPendingCue: (
+        // FIXME: add cue list
         callback: (cueNumber: string) => void,
     ) => RemoveEventListenerFunc;
 
@@ -63,10 +76,13 @@ const exposedApi: ContextBridgeApi = {
     getConnectionState: async () =>
         ipcRenderer.invoke('console:get-connection-state'),
 
-    getCue: async (cueNumber) =>
+    getCue: async (cueListNumber, cueNumber) =>
         ipcRenderer.invoke('console:get-cue', cueNumber),
 
-    getCues: async () => ipcRenderer.invoke('console:get-cues'),
+    getCues: async (cueListNumber) =>
+        ipcRenderer.invoke('console:get-cues', cueListNumber),
+
+    getCueLists: async () => ipcRenderer.invoke('console:get-cue-lists'),
 
     getCurrentCue: async () => ipcRenderer.invoke('console:get-current-cue'),
 

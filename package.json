@@ -46,6 +46,7 @@
     },
     "dependencies": {
         "classnames": "^2.3.2",
+        "downshift": "^8.3.1",
         "electron-squirrel-startup": "^1.0.0",
         "eos-console": "^0.3.0",
         "react": "^18.2.0",

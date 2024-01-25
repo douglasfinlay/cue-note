@@ -76,6 +76,14 @@ function CueList({
         );
     }
 
+    if (!cues.length) {
+        return (
+            <div className='h-full max-h-full min-w-full max-w-full flex flex-col items-center justify-center'>
+                <div>No cues</div>
+            </div>
+        );
+    }
+
     const cueComponents = cues.map((cue, i) => (
         <CueListItem
             key={i}

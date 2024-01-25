@@ -1,4 +1,4 @@
-import { Cue, TargetNumber } from 'eos-console';
+import { Cue, CueList as EosCueList, TargetNumber } from 'eos-console';
 import { useEffect, useRef, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { RemoveEventListenerFunc } from '../preload';
@@ -6,12 +6,13 @@ import NoteInput, { NoteInputHandle } from './NoteInput';
 import PlaybackStatusDisplay from './PlaybackStatusDisplay';
 import QuickNoteButtonGrid from './QuickNoteButtonGrid';
 import CueList from './sidebar/CueList';
+import CueListSelect from './sidebar/CueListSelect';
 
-// interface CueNoteMainProps {
-//     cueList: number;
-// }
+const CueNoteMain = () => {
+    // TODO: allow null?
+    const [cueListNumber, setCueListNumber] = useState<TargetNumber>(1);
+    const [cueLists, setCueLists] = useState<EosCueList[]>([]);
 
-const CueNoteMain = (/* props: CueNoteMainProps */) => {
     const [cues, setCues] = useState<Cue[]>([]);
     const [activeCue, setActiveCue] = useState<Cue | null>(null);
     const [activeCueNumber, setActiveCueNumber] = useState<TargetNumber | null>(
@@ -48,7 +49,7 @@ const CueNoteMain = (/* props: CueNoteMainProps */) => {
     };
 
     const applyNoteToCue = (cueNumber: TargetNumber, note: string) => {
-        window.api.updateCueNotes(1, cueNumber, note.trimEnd());
+        window.api.updateCueNotes(cueListNumber, cueNumber, note.trimEnd());
         discardNote();
     };
 
@@ -88,11 +89,13 @@ const CueNoteMain = (/* props: CueNoteMainProps */) => {
         setLoadingCues(true);
 
         try {
-            const cues = await window.api.getCues();
+            const cues = await window.api.getCues(cueListNumber);
             setCues(cues);
 
             const acn = await window.api.getCurrentCue();
-            setActiveCueNumber(acn?.cueList === 1 ? acn.cueNumber : null);
+            setActiveCueNumber(
+                acn?.cueList === cueListNumber ? acn.cueNumber : null,
+            );
         } catch (err) {
             console.error(err);
         } finally {
@@ -136,14 +139,14 @@ const CueNoteMain = (/* props: CueNoteMainProps */) => {
 
     const onCuesChanged = (
         cueNumbers: TargetNumber[],
-        cueList: TargetNumber,
+        cueListNumber: TargetNumber,
     ) => {
-        if (cueList !== 1) {
+        if (cueListNumber !== cueListNumber) {
             return;
         }
 
         for (const cueNumber of cueNumbers) {
-            window.api.getCue(cueNumber).then((cue) => {
+            window.api.getCue(cueListNumber, cueNumber).then((cue) => {
                 setCues((cues) => {
                     if (!cue) {
                         return deleteCue(cues, cueNumber);
@@ -168,7 +171,11 @@ const CueNoteMain = (/* props: CueNoteMainProps */) => {
 
         document.addEventListener('keydown', onKeyDown, false);
 
-        loadCues();
+        // loadCues();
+
+        (async () => {
+            setCueLists(await window.api.getCueLists());
+        })();
 
         return () => {
             for (const removeListener of ipcEventListeners) {
@@ -209,8 +216,14 @@ const CueNoteMain = (/* props: CueNoteMainProps */) => {
                 (cue) => cue.targetNumber === activeCueNumber,
             );
             setActiveCue(activeCue ?? null);
+        } else {
+            setActiveCue(null);
         }
     }, [cues, activeCueNumber]);
+
+    useEffect(() => {
+        loadCues();
+    }, [cueListNumber]);
 
     return (
         <div className='flex h-full max-h-full gap-2'>
@@ -283,16 +296,12 @@ const CueNoteMain = (/* props: CueNoteMainProps */) => {
                         onTriggerEditCue={editCue}
                     />
                 </div>
-                {/* <div className='h-10 shrink-0'>
+                <div className='h-10 shrink-0'>
                     <CueListSelect
-                        cueLists={[
-                            {
-                                targetNumber: 1,
-                                label: 'cuelist',
-                            } as any,
-                        ]}
+                        cueLists={cueLists}
+                        onCueListSelected={setCueListNumber}
                     />
-                </div> */}
+                </div>
             </div>
         </div>
     );

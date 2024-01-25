@@ -1,9 +1,16 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
-import { EosConsole, EosCueIdentifier, RecordTargetType, TargetNumber } from 'eos-console';
+import {
+    CueList,
+    EosConsole,
+    EosCueIdentifier,
+    RecordTargetType,
+    TargetNumber,
+} from 'eos-console';
 import * as colors from 'tailwindcss/colors';
 
 let mainWindow: BrowserWindow | null;
 let eos: EosConsole | null;
+let cueLists: CueList[] = [];
 
 const INITIAL_WINDOW_TITLE = 'CueNote';
 
@@ -81,7 +88,8 @@ ipcMain.handle('console:connect', async (_event, ...[address]) => {
         mainWindow?.webContents.send('console:connection-state', 'connecting');
     });
 
-    eos.on('connect', () => {
+    eos.on('connect', async () => {
+        cueLists = (await eos?.getCueLists()) ?? [];
         mainWindow?.webContents.send('console:connection-state', 'connected');
     });
 
@@ -101,17 +109,19 @@ ipcMain.handle('console:connect', async (_event, ...[address]) => {
         );
 
         mainWindow?.setTitle(INITIAL_WINDOW_TITLE);
+
+        cueLists = [];
     });
 
     eos.on('show-name', (showName: string) => {
         mainWindow?.webContents.send('console:show-name', showName);
-        
+
         let windowTitle = INITIAL_WINDOW_TITLE;
-        
+
         if (showName) {
             windowTitle += ` - ${showName}`;
         }
-        
+
         mainWindow?.setTitle(windowTitle);
     });
 
@@ -124,11 +134,22 @@ ipcMain.handle('console:connect', async (_event, ...[address]) => {
     });
 
     // FIXME: cue list should not be an array
-    eos.on('record-target-change', (targetType: RecordTargetType, cueNumbers: TargetNumber[], cueList: TargetNumber[]) => {
-        if (targetType === 'cue' && cueList[0] === 1) {
-            mainWindow?.webContents.send('console:cue-change', cueNumbers, cueList[0]);
-        }
-    });
+    eos.on(
+        'record-target-change',
+        (
+            targetType: RecordTargetType,
+            cueNumbers: TargetNumber[],
+            cueList: TargetNumber[],
+        ) => {
+            if (targetType === 'cue') {
+                mainWindow?.webContents.send(
+                    'console:cue-change',
+                    cueNumbers,
+                    cueList[0],
+                );
+            }
+        },
+    );
 
     await eos.connect();
 });
@@ -140,23 +161,33 @@ ipcMain.on('console:disconnect', () => {
     }
 });
 
-ipcMain.handle('console:get-cue', (_event, ...[cueNumber]) => eos?.getCue(1, cueNumber));
+ipcMain.handle('console:get-cue', (_event, ...[cueListNumber, cueNumber]) =>
+    eos?.getCue(cueListNumber, cueNumber),
+);
 
-ipcMain.handle('console:get-cues', async () => {
+ipcMain.handle('console:get-cues', async (_event, ...[cueListNumber]) => {
     if (!eos) {
         return [];
     }
 
     const progressCallback = (complete: number, total: number) => {
         mainWindow?.setProgressBar(complete / total);
-        mainWindow?.webContents.send('console:get-cues-progress', complete, total);
+        mainWindow?.webContents.send(
+            'console:get-cues-progress',
+            complete,
+            total,
+        );
     };
 
     mainWindow?.setProgressBar(0);
-    const cues = await eos.getCues(1, progressCallback);
+    const cues = await eos.getCues(cueListNumber, progressCallback);
     mainWindow?.setProgressBar(-1);
 
     return cues;
+});
+
+ipcMain.handle('console:get-cue-lists', () => {
+    return cueLists;
 });
 
 ipcMain.handle('console:get-current-cue', () => eos?.activeCueNumber);
@@ -166,6 +197,7 @@ ipcMain.handle('console:get-host', () => eos?.host);
 ipcMain.handle('console:get-pending-cue', () => eos?.pendingCueNumber);
 
 ipcMain.on('console:go-to-cue', (_event, ...[cueNumber]) =>
+    // FIXME:
     eos?.fireCue(1, cueNumber),
 );
 
@@ -177,6 +209,8 @@ ipcMain.handle(
 ipcMain.on(
     'console:update-cue-notes',
     (_event, ...[cueListNumber, cueNumber, notes]) => {
-        eos?.sendMessage(`/eos/set/cue/${cueListNumber}/${cueNumber}/notes`, [notes]);
+        eos?.sendMessage(`/eos/set/cue/${cueListNumber}/${cueNumber}/notes`, [
+            notes,
+        ]);
     },
 );
