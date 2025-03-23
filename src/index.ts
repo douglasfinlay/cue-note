@@ -75,7 +75,7 @@ ipcMain.handle('console:connect', async (_event, ...[address]) => {
         eos.disconnect();
     }
 
-    eos = new EosConsole(address);
+    eos = new EosConsole({ host: address });
 
     eos.on('connecting', () => {
         mainWindow?.webContents.send('console:connection-state', 'connecting');
@@ -83,15 +83,6 @@ ipcMain.handle('console:connect', async (_event, ...[address]) => {
 
     eos.on('connect', () => {
         mainWindow?.webContents.send('console:connection-state', 'connected');
-    });
-
-    eos.on('connectError', (err: Error) => {
-        mainWindow?.webContents.send('console:connect-error', err.message);
-
-        mainWindow?.webContents.send(
-            'console:connection-state',
-            'disconnected',
-        );
     });
 
     eos.on('disconnect', () => {
@@ -130,7 +121,14 @@ ipcMain.handle('console:connect', async (_event, ...[address]) => {
         }
     });
 
-    await eos.connect();
+    try {
+        await eos.connect();
+    } catch (err) {
+        mainWindow?.webContents.send(
+            'console:connect-error',
+            (err instanceof Error) ? err.message : 'Unknown error');
+        mainWindow?.webContents.send('console:connection-state', 'disconnected');
+    }
 });
 
 ipcMain.on('console:disconnect', () => {
