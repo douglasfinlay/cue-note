@@ -165,7 +165,7 @@ const CueNoteMain = (props: CueNoteMainProps) => {
                     </div>
                 </div>
             </div>
-            <div className='basis-1/3 grow-0 shrink-0 flex gap-2 relative'>
+            <div className='basis-1/3 grow-0 shrink-0 flex gap-2 relative min-w-0'>
                 <CueList
                     cues={props.cues}
                     activeCueNumber={props.activeCue?.targetNumber}
