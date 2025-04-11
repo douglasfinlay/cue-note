@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,17 +14,20 @@ env:
 
 jobs:
   publish:
-    runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
-        include:
-          - os: macos-latest
-            arch: arm64
-          - os: macos-latest
+        config:
+          - os: macos-13  # Intel
             arch: x64
+            name: macOS
+          - os: macos-14  # Apple Silicon
+            name: macOS
+            arch: arm64
           - os: windows-latest
             arch: x64
+            name: Windows
+
+    runs-on: ${{ matrix.config.os }}
 
     steps:
       - name: Check out Git repository
@@ -34,7 +38,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Setup Node.js environment
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -42,8 +46,10 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      - name: Publish using Electron Forge
+      - name: Build for ${{ matrix.config.name }} (${{ matrix.config.arch }})
+        run: yarn run make -- --arch=${{ matrix.config.arch }}
+
+      - name: Publish for ${{ matrix.config.name }} (${{ matrix.config.arch }})
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          npm_config_arch: ${{ matrix.arch }}
-        run: yarn run publish
+        run: yarn run publish -- --arch=${{ matrix.config.arch }}
